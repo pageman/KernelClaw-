@@ -1,6 +1,8 @@
 [workspace]
 resolver = "2"
 members = [
+    "kernel-zero-tokio",
+    "kernel-zero-serde-derive",
     "kernel-daemon",
     "kernel-core",
     "kernel-memory", 

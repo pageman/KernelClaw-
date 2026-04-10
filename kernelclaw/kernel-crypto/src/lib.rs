@@ -1,114 +1,139 @@
-//! KernelClaw Cryptography Module
-//! Key generation, signing, and receipt management
+//! KernelClaw Crypto - Ed25519 signing with optional zero-dep
 
-use ed25519_dalek::{SigningKey, VerifyingKey};
-use rand::rngs::OsRng;
+/// Use zero-dep Ed25519 implementation if available
+#[cfg(feature = "use_zero_ed25519")]
+pub use kernel_zero_ed25519::signing::{generate_keypair, create_receipt, verify_receipt, SigningKeyPair};
+/// Use standard ed25519-dalek otherwise
+#[cfg(not(feature = "use_zero_ed25519"))]
+pub use ed25519_dalek::{SigningKeyPair, Signature, Signer, Verifier};
+
+#[cfg(not(feature = "use_zero_ed25519"))]
+use ed25519_dalek::{SigningKeypair, Signer, Verifier};
 use serde::{Deserialize, Serialize};
-use kernel_zero::sha256::Sha256;
-use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
-use std::path::PathBuf;
-use std::fs;
 
-/// Signing key wrapper
-#[derive(Debug, Clone)]
-pub struct SigningKeyPair {
-    pub signing: SigningKey,
-    pub verifying: VerifyingKey,
-}
-
-impl From<(SigningKey, VerifyingKey)> for SigningKeyPair {
-    fn from((signing, verifying): (SigningKey, VerifyingKey)) -> Self {
-        SigningKeyPair { signing, verifying }
-    }
-}
-
-/// Generate a new keypair
-pub fn generate_keypair() -> SigningKeyPair {
-    let signing = SigningKey::generate(&mut OsRng);
-    let verifying = signing.verifying_key();
-    SigningKeyPair { signing, verifying }
-}
-
-/// Load keypair from file
-pub fn load_keypair(path: &PathBuf) -> Result<SigningKeyPair, std::io::Error> {
-    let bytes = fs::read(path)?;
-    if bytes.len() != 32 {
-        return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "Invalid key length"));
-    }
-    let key: [u8; 32] = bytes.try_into().unwrap();
-    let signing = SigningKey::from_bytes(&key);
-    let verifying = signing.verifying_key();
-    Ok(SigningKeyPair { signing, verifying })
-}
-
-/// Save keypair to file
-pub fn save_keypair(path: &PathBuf, keypair: &SigningKeyPair) -> Result<(), std::io::Error> {
-    fs::write(path, keypair.signing.to_bytes())
-}
-
-/// Sign data and return signature
-pub fn sign(data: &[u8], keypair: &SigningKeyPair) -> Vec<u8> {
-    use ed25519_dalek::Signer;
-    let signature = keypair.signing.sign(data);
-    signature.to_bytes().to_vec()
-}
-
-/// Verify signature
-pub fn verify(data: &[u8], signature: &[u8], key: &VerifyingKey) -> bool {
-    use ed25519_dalek::Verifier;
-    if signature.len() != 64 { return false; }
-    let sig_arr: [u8; 64] = match signature.try_into() { Ok(s) => s, Err(_) => return false, };
-    let sig = ed25519_dalek::Signature::from_bytes(&sig_arr);
-    key.verify(data, &sig).is_ok()
-}
-
-/// Compute SHA256 hash
-pub fn hash(data: &[u8]) -> Vec<u8> {
-    let mut hasher = kernel_zero::sha256::Sha256::new();
-    hasher.update(data);
-    hasher.finalize().to_vec()
-}
-
-/// Receipt structure
+/// Receipt for execution records
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Receipt {
     pub id: String,
     pub timestamp: i64,
-    pub goal: String,
     pub action: String,
-    pub input_summary: String,
-    pub result_summary: String,
-    pub status: String,
+    pub outcome: String,
+    pub content: String,
     pub signature: String,
-    pub receipt_hash: String,
 }
 
-/// Create and sign a receipt
+/// Generate a new keypair
+#[cfg(not(feature = "use_zero_ed25519"))]
+pub fn generate_keypair() -> SigningKeyPair {
+    let mut csprng = rand::thread_rng();
+    SigningKeypair::generate(&mut csprng)
+}
+
+/// Create a signed receipt
+#[cfg(not(feature = "use_zero_ed25519"))]
 pub fn create_receipt(
-    goal: &str,
+    id: &str,
     action: &str,
-    input_summary: &str,
-    result_summary: &str,
-    status: &str,
-    keypair: &SigningKeyPair,
-) -> Receipt {
-    let timestamp = utc_now();
-    let id = random_id().to_string();
+    content: &str,
+    outcome: &str,
+    kp: &SigningKeyPair,
+) -> Result<Receipt, String> {
+    let payload = format!("{}:{}:{}:{}:{}", id, action, content, outcome, kp.verifying_key());
+    let signature = kp.sign(payload.as_bytes());
     
-    let payload = format!("{}|{}|{}|{}|{}|{}", id, timestamp, goal, action, input_summary, result_summary);
-    let signature_bytes = sign(payload.as_bytes(), keypair);
-    let signature = BASE64.encode(&signature_bytes);
-    let receipt_hash = BASE64.encode(&hash(payload.as_bytes()));
-    
-    Receipt { id, timestamp: timestamp, goal: goal.to_string(), action: action.to_string(),
-        input_summary: input_summary.to_string(), result_summary: result_summary.to_string(),
-        status: status.to_string(), signature, receipt_hash }
+    Ok(Receipt {
+        id: id.to_string(),
+        timestamp: std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64,
+        action: action.to_string(),
+        outcome: outcome.to_string(),
+        content: content.to_string(),
+        signature: base64_encode(&signature.to_bytes()),
+    })
 }
 
 /// Verify a receipt
-pub fn verify_receipt(receipt: &Receipt, key: &VerifyingKey) -> bool {
-    let payload = format!("{}|{}|{}|{}|{}|{}", receipt.id, receipt.timestamp, 
-        receipt.goal, receipt.action, receipt.input_summary, receipt.result_summary);
-    let signature_bytes = match BASE64.decode(&receipt.signature) { Ok(s) => s, Err(_) => return false };
-    verify(payload.as_bytes(), &signature_bytes, key)
+#[cfg(not(feature = "use_zero_ed25519"))]
+pub fn verify_receipt(receipt: &Receipt, pk: &VerifyingKey) -> bool {
+    let payload = format!("{}:{}:{}:{}:{}", receipt.id, receipt.action, receipt.content, receipt.outcome, pk);
+    let sig_bytes = base64_decode(&receipt.signature).ok()?;
+    let signature = Signature::from_bytes(&sig_bytes);
+    pk.verify(payload.as_bytes(), &signature).is_ok()
+}
+
+/// Simple base64 encoding (inline, replaces base64 crate)
+pub fn base64_encode(data: &[u8]) -> String {
+    const ALPHABET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut result = String::new();
+    
+    for chunk in data.chunks(3) {
+        let b0 = chunk[0] as u32;
+        let b1 = chunk.get(1).copied().unwrap_or(0) as u32;
+        let b2 = chunk.get(2).copied().unwrap_or(0) as u32;
+        
+        result.push(ALPHABET[(b0 >> 2) as usize] as char);
+        result.push(ALPHABET[(((b0 & 0x03) << 4) | (b1 >> 4)) as usize] as char);
+        
+        if chunk.len() > 1 {
+            result.push(ALPHABET[(((b1 & 0x0F) << 2) | (b2 >> 6)) as usize] as char);
+        } else {
+            result.push('=');
+        }
+        
+        if chunk.len() > 2 {
+            result.push(ALPHABET[(b2 & 0x3F) as usize] as char);
+        } else {
+            result.push('=');
+        }
+    }
+    
+    result
+}
+
+/// Simple base64 decoding (inline)
+pub fn base64_decode(data: &str) -> Result<Vec<u8>, String> {
+    const DECODE: [u8; 256] = {
+        let mut arr = [0u8; 256];
+        let mut i = 0u8;
+        while i < 26 {
+            arr[(b'A' + i) as usize] = i;
+            arr[(b'a' + i) as usize] = i + 26;
+            arr[(b'0' + i) as usize] = i + 52;
+            i += 1;
+        }
+        arr[(b'+') as usize] = 62;
+        arr[(b'/') as usize] = 63;
+        arr
+    };
+    
+    let data = data.as_bytes();
+    let mut result = Vec::new();
+    
+    let mut i = 0;
+    while i < data.len() {
+        let mut chunk = [0u8; 4];
+        let mut valid = 0;
+        
+        while valid < 4 && i < data.len() {
+            if data[i] != b'=' {
+                chunk[valid] = DECODE[data[i] as usize];
+                valid += 1;
+            }
+            i += 1;
+        }
+        
+        if valid > 0 {
+            result.push(((chunk[0] << 2) | (chunk[1] >> 4)) as u8);
+            if valid > 1 && data.get(i - valid + 2).copied() != Some(&b'=') {
+                result.push(((chunk[1] << 4) | (chunk[2] >> 2)) as u8);
+            }
+            if valid > 2 && data.get(i - valid + 3).copied() != Some(&b'=') {
+                result.push(((chunk[2] << 6) | chunk[3]) as u8);
+            }
+        }
+    }
+    
+    Ok(result)
 }

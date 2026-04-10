@@ -1,0 +1,13 @@
+[package]
+name = "kernel-zero-serde-derive"
+version = "0.1.0"
+edition = "2021"
+description = "Serialize/Deserialize derive macros (serde replacement)"
+
+[dependencies]
+# ZERO external deps! (uses proc_macro)
+
+[build-dependencies]
+proc-macro2 = "1.0"
+quote = "1.0"
+syn = "2.0"
