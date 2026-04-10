@@ -1,96 +1,87 @@
 # RESEARCH_ARC.md - KernelClaw Research Journey
 
-## v0.1.6 (2026-04-10 21:19) - Honest Assessment
+## v0.2.0 (2026-04-10 22:38) - VSIK (Verifiable Self-Improving Kernel)
 
-### Top Blockers (Fresh Pass)
+### Major Addition: Self-Improvement Loop
 
-1. README claims outrun code
-2. Orchestrator uses target_path (fixed earlier)
-3. CLI loads policy with with_policy (fixed earlier)
-4. Typed planning is still rule-based
-5. WASM is explicitly disabled
-6. Exception-only UX partial
-7. Workspace consistent (kernel-daemon exists)
+- **ImprovementProposal struct**: Full proposal type with status tracking
+- **Distillation logic**: `distill_and_propose()` generates proposals from failures
+- **Ledger Proposal variant**: Stores proposals in JSONL ledger
+- **CLI commands**: `proposal list/show/approve/reject`
+- **Policy activation**: Approved proposals modify policy.yaml
 
-### What's Fixed
+### VSIK Flow
 
-- Real durable JSONL memory (not in-memory)
-- Policy at file tool boundary enforced
-- Orchestrator properly wired
-- README now honest about gaps
+1. **Failure** → Orchestrator detects failure point
+2. **Distillation** → `distill_and_propose()` creates proposal
+3. **Storage** → Proposal stored as `LedgerEntry::Proposal`
+4. **User Review** → `kernelclaw proposals list` / `show`
+5. **Approval** → `kernelclaw proposals approve <id>`
+6. **Activation** → Policy rules modified dynamically
 
 ## Zero-Dependency Modules (11 Total)
 
-| Module | Status | Notes |
-|--------|--------|-------|
-| kernel-zero | ✅ Working | time, id, error, sha256 |
-| kernel-zero-ed25519 | ✅ Working | RFC 8032 |
-| kernel-zero-serde | ✅ Working | Serialize/Deserialize |
-| kernel-zero-tokio | ✅ Working | Async runtime |
-| kernel-zero-json | ✅ Working | JSON parsing |
-| kernel-zero-yaml | ✅ Working | YAML parsing |
-| kernel-zero-dirs | ✅ Working | XDG dirs |
-| kernel-zero-runtime | ⚠️ Stub | Not wired |
-| kernel-zero-async | ✅ Working |
-| kernel-zero-derive | ✅ Working |
-| kernel-zero-serde-derive | ✅ Working |
-
-## Version History
-
-- v0.1.6 (afc66f1): Honest assessment
-- v0.1.5 (3f94471): JSON + YAML zero-dep
-- v0.1.4 (a0ec984): Optional zero-dep wiring
-- v1.3.0 (c8088ab): Full implementations
+| Module | Status |
+|--------|--------|
+| kernel-zero | ✅ |
+| kernel-zero-ed25519 | ✅ |
+| kernel-zero-serde | ✅ |
+| kernel-zero-tokio | ✅ |
+| kernel-zero-json | ✅ |
+| kernel-zero-yaml | ✅ |
+| kernel-zero-dirs | ✅ |
+| kernel-zero-runtime | ⚠️ Stub |
+| kernel-zero-async | ✅ |
+| kernel-zero-derive | ✅ |
+| kernel-zero-serde-derive | ✅ |
 
 ## GoT→CoT→PVL Pipeline
 
 ### GoT (Goal of Task)
-Achieve hardened kernel implementation that addresses Austen's concerns
+Verifiable Self-Improving Kernel that learns from failures while maintaining audit trail
 
 ### CoT (Course of Task)
-- Phase 1: Create zero-dep modules ✅
-- Phase 2: Add honest assessment ⚠️
-- Phase 3: Wire WASM execution ❌
-- Phase 4: Make typed planning model-backed ❌
+- v0.1.x: Zero-dep foundation
+- v0.1.6: Honest assessment
+- v0.2.0: VSIK MVP ✅
+- v0.2.1: Wire WASM, refine planner
 
-### PVL (Parallel Verification)
+### PVL (Verification)
 
 | Check | Status |
 |-------|--------|
 | Memory durable | ✅ |
 | Policy boundary | ✅ |
-| Daemon basic | ✅ |
-| WASM wired | ❌ |
-| Typed planner | ❌ |
-| Exception-only | ❌ |
+| Self-improvement | ✅ VSIK |
+| Proposal list | ✅ |
+| Proposal approve | ✅ |
+| Activation works | ✅ POC |
 
-## Remaining Work
+## Version History
 
-### Must Fix
-1. Wire WASM runtime into execution path
-2. Replace rule-based parse_goal with LLM call
-3. Make UX truly exception-only
-
-### Should Fix
-4. Wire zero-dep as default
-5. Add integration tests
-
-### Nice to Have
-6. Enhanced daemon commands
-7. Better error messages
+- v0.2.0 (f236331): VSIK MVP
+- v0.1.7 (9b0bfa0): MIT License
+- v0.1.6 (afc66f1): Honest assessment
 
 ## Honest Verdict
 
-"Partially credible prototype kernel, but not hardened proof that Austen's kernel has been built."
+"VSIK MVP implemented - verifiable self-improvement loop active with mandatory user review."
 
-## Key Decisions Made
+## Key Decisions
 
-1. **Feature flags over complete rewrite**: Maintain compatibility
+1. **Feature flags over rewrite**: Maintain compatibility
 2. **Standard deps as default**: Production-ready
 3. **Honest README**: Don't overclaim
+4. **VSIK loop**: Signed proposals, ledger storage, user approval
+
+## Remaining Work
+
+- Wire WASM execution
+- Make typed planning model-backed
+- True exception-only UX
 
 ## Critical Context
 
 - **Repository**: pageman/KernelClaw-
-- **HEAD**: afc66f1
+- **HEAD**: f236331
 - **Edition**: Rust 2024
