@@ -32,7 +32,7 @@ pub struct ExecutionReceipt {
     pub timestamp: i64,
 }
 
-/// Main orchestrator - FULL pipeline implementation
+/// Main orchestrator - FULL pipeline with POLICY
 pub struct Orchestrator {
     policy: Policy,
     ledger: MemoryLedger,
@@ -43,18 +43,39 @@ pub struct Orchestrator {
 }
 
 impl Orchestrator {
+    /// Create with loaded policy - FIXED to use policy!
     pub fn new(policy_path: std::path::PathBuf, data_path: std::path::PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
         let policy = kernel_policy::load_policy(&policy_path)?;
         let ledger = MemoryLedger::new(data_path);
         
+        // FIXED: Use executor WITH policy!
+        let executor = Executor::with_policy(policy.clone());
+        
         Ok(Orchestrator {
             policy,
             ledger,
-            executor: Executor::new(),
+            executor,
             keypair: None,
             llm: None,
             data_path,
         })
+    }
+    
+    /// Create with explicit components - also uses policy
+    pub fn new_with_components(
+        policy: Policy,
+        ledger: MemoryLedger,
+        executor: Executor,
+        keypair: SigningKeyPair,
+    ) -> Self {
+        Orchestrator {
+            policy,
+            ledger,
+            executor,
+            keypair: Some(keypair),
+            llm: None,
+            data_path: std::path::PathBuf::new(),
+        }
     }
     
     pub fn set_keypair(&mut self, keypair: SigningKeyPair) {
@@ -67,7 +88,7 @@ impl Orchestrator {
     
     /// FULL pipeline: parse -> validate -> execute -> receipt -> record
     pub fn execute_goal(&mut self, raw_goal: &str) -> Result<ExecutionReceipt, Box<dyn std::error::Error>> {
-        let goal_id = random_id().to_string();
+        let goal_id = kernel_zero::id::random_id();
         
         // Stage 1: PARSE - Typed parsing via LLM
         let parsed = if let Some(ref llm) = self.llm {
@@ -76,15 +97,20 @@ impl Orchestrator {
             None
         };
         
-        // If parsed, validate and execute
+        // If parsed, validate and execute with loaded policy
         if let Some(ref parsed_goal) = parsed {
-            // Stage 2: VALIDATE - Policy check
+            // Stage 2: VALIDATE - Check policy allows this tool with target path
             let tool_name = &parsed_goal.tool_name;
-            if !kernel_policy::is_capability_allowed(&self.policy, tool_name, None) {
+            
+            // FIXED: Check capability with actual target path from parameters
+            let target_path = parsed_goal.parameters.get("path")
+                .and_then(|v| v.as_str());
+            
+            if !kernel_policy::is_capability_allowed(&self.policy, tool_name, target_path) {
                 return Err(format!("Tool {} not allowed by policy", tool_name).into());
             }
             
-            // Stage 3: EXECUTE - Through capability-gated executor
+            // Stage 3: EXECUTE - Through policy-gated executor (now uses policy!)
             let exec_result = self.executor.execute(&kernel_exec::ExecRequest {
                 capabilities: vec![kernel_exec::Capability::FileRead(tool_name.clone())],
                 tool_name: tool_name.clone(),
@@ -97,19 +123,12 @@ impl Orchestrator {
             
             // Stage 4: RECEIPT - Sign execution record
             let receipt = if let Some(ref kp) = self.keypair {
-                create_receipt(
-                    raw_goal,
-                    "execute_goal",
-                    &exec_result.output,
-                    "completed",
-                    "success",
-                    kp
-                )?
+                create_receipt(raw_goal, "execute_goal", &exec_result.output, "completed", "success", kp)?
             } else {
                 return Err("No keypair configured".into());
             };
             
-            // Stage 5: RECORD - Append to ledger (DURABLE JSONL now!)
+            // Stage 5: RECORD - Append to durable ledger
             self.ledger.append(
                 EntryType::GoalOutcome,
                 format!("Goal {} executed: {}", goal_id, parsed_goal.tool_name),
@@ -118,21 +137,14 @@ impl Orchestrator {
             
             Ok(ExecutionReceipt {
                 goal_id,
-                tool_name: parsed_goal.tool_name,
+                tool_name: parsed_goal.tool_name.clone(),
                 result: exec_result.output,
-                timestamp: utc_now(),
+                timestamp: kernel_zero::time::now(),
             })
         } else {
-            // No LLM - just create receipt with "stubbed" outcome
+            // No LLM - stubbed execution
             let receipt = if let Some(ref kp) = self.keypair {
-                create_receipt(
-                    raw_goal,
-                    "execute_goal",
-                    "stubbed_no_llm",
-                    "completed",
-                    "no_llm",
-                    kp
-                )?
+                create_receipt(raw_goal, "execute_goal", "stubbed_no_llm", "completed", "no_llm", kp)?
             } else {
                 return Err("No keypair configured".into());
             };
@@ -147,7 +159,7 @@ impl Orchestrator {
                 goal_id,
                 tool_name: "none".to_string(),
                 result: "stubbed_no_llm".to_string(),
-                timestamp: utc_now(),
+                timestamp: kernel_zero::time::now(),
             })
         }
     }
