@@ -92,8 +92,8 @@ pub fn create_receipt(
     status: &str,
     keypair: &SigningKeyPair,
 ) -> Receipt {
-    let timestamp = chrono::Utc::now().timestamp();
-    let id = uuid::Uuid::new_v4().to_string();
+    let timestamp = utc_now();
+    let id = random_id().to_string();
     
     let payload = format!("{}|{}|{}|{}|{}|{}", id, timestamp, goal, action, input_summary, result_summary);
     let signature_bytes = sign(payload.as_bytes(), keypair);

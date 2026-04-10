@@ -77,7 +77,7 @@ impl OllamaClient {
         let risk_level = self.infer_risk(goal);
         
         let parsed = ParsedGoal {
-            task_id: format!("goal_{}", uuid::Uuid::new_v4()),
+            task_id: format!("goal_{}", random_id()),
             tool_name,
             parameters: serde_json::json!({ "input": goal }),
             justification: format!("Auto-parsed from: {}", goal),

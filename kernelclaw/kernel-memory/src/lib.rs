@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::fs;
 use std::sync::Mutex;
-use uuid::Uuid;
-use chrono::Utc;
+use kernel_zero::id::random_id;
+use kernel_zero::time::now as utc_now;
 use sha2::{Sha256, Digest};
 
 /// Ledger entry type

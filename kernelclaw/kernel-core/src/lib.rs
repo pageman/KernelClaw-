@@ -67,7 +67,7 @@ impl Orchestrator {
     
     /// FULL pipeline: parse -> validate -> execute -> receipt -> record
     pub fn execute_goal(&mut self, raw_goal: &str) -> Result<ExecutionReceipt, Box<dyn std::error::Error>> {
-        let goal_id = uuid::Uuid::new_v4().to_string();
+        let goal_id = random_id().to_string();
         
         // Stage 1: PARSE - Typed parsing via LLM
         let parsed = if let Some(ref llm) = self.llm {
@@ -120,7 +120,7 @@ impl Orchestrator {
                 goal_id,
                 tool_name: parsed_goal.tool_name,
                 result: exec_result.output,
-                timestamp: chrono::Utc::now().timestamp(),
+                timestamp: utc_now(),
             })
         } else {
             // No LLM - just create receipt with "stubbed" outcome
@@ -147,7 +147,7 @@ impl Orchestrator {
                 goal_id,
                 tool_name: "none".to_string(),
                 result: "stubbed_no_llm".to_string(),
-                timestamp: chrono::Utc::now().timestamp(),
+                timestamp: utc_now(),
             })
         }
     }
