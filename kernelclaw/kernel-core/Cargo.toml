@@ -1,0 +1,23 @@
+[package]
+name = "kernel-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+tokio.workspace = true
+serde.workspace = true
+serde_yaml.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+
+kernel-memory = { path = "../kernel-memory" }
+kernel-exec = { path = "../kernel-exec" }
+kernel-llm = { path = "../kernel-llm" }
+kernel-policy = { path = "../kernel-policy" }
+kernel-crypto = { path = "../kernel-crypto" }
+kernel-notify = { path = "../kernel-notify" }

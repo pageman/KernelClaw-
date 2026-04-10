@@ -1,0 +1,35 @@
+# KernelClaw Default Policy
+# v0.1.0 - Conservative baseline
+
+version: "0.1.0"
+
+# Invariants - cannot be violated
+invariants:
+  - no_network_access
+  - no_ambient_authority
+  - no_self_modification
+
+# Actions requiring human approval
+requires_approval:
+  - file_write
+  - shell_exec
+  - capability_escalation
+
+# Forbidden execution categories
+forbidden:
+  - network_requests
+  - external_process_spawn
+
+# Read-only paths
+readonly_paths:
+  - ~/.kernelclaw/keys/
+  - ~/.kernelclaw/receipts/
+
+# Explicit capability allowlist
+capability_allowlist:
+  file_read:
+    allowed_paths:
+      - ~/Documents/
+      - /tmp/
+  calendar_read:
+    enabled: true

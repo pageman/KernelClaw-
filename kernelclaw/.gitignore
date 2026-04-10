@@ -1,0 +1,7 @@
+target/
+~/.kernelclaw/
+*.log
+*.swp
+*.swo
+*~
+.DS_Store
