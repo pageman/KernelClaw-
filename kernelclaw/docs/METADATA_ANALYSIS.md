@@ -1,10 +1,10 @@
-# METADATA_ANALYSIS.md - KernelClaw v0.1.4
+# METADATA_ANALYSIS.md - KernelClaw v0.1.6
 
 ## Repository Overview
 
 - **Repository**: pageman/KernelClaw-
-- **HEAD**: a0ec984 (v0.1.4)
-- **Version**: 0.1.4
+- **HEAD**: f7de675 (v0.1.6)
+- **Version**: 0.1.6
 - **Edition**: 2024 (Rust edition)
 - **License**: MIT OR Apache-2.0
 

@@ -1,13 +1,13 @@
 # KernelClaw - Agent Kernel
 
-**Status**: v0.1.4 - Optional Zero-Dependency Wiring
+**Status**: v0.1.6 - FULL Zero-Dependency Achievable
 
 ## About - The Austen Allred Concern
 
 KernelClaw responds to Austen Allred's "Agent Desiderata":
 https://x.com/Austen/status/2042444789891654076
 
-## Implementation Status (v0.1.4)
+## Implementation Status (v0.1.6)
 
 | Concern | Status | Notes |
 |---------|--------|-------|
@@ -18,7 +18,7 @@ https://x.com/Austen/status/2042444789891654076
 | Exception-Only UX | ✅ Working | Prints on explicit request |
 | Daemon | ✅ Working | Unix socket server wired to CLI |
 | WASM Runtime | ✅ Working | WASM sandbox with limits configured |
-| Zero-Dependency | ⚠️ Optional | Feature flags available |
+| Zero-Dependency | ✅ Working | All deps have zero-dep replacements |
 
 ## Quick Start
 
@@ -57,16 +57,21 @@ sha2 = "0.10"
 
 ### Zero-Dependency Mode
 
-Available zero-dep modules:
+Available zero-dep modules (11 total):
 
 | Module | Replaces | LOC |
 |--------|---------|-----|
-| kernel-zero | chrono, uuid | ~800 |
+| kernel-zero | chrono, uuid, thiserror | ~800 |
 | kernel-zero-ed25519 | ed25519-dalek | ~500 |
 | kernel-zero-serde | serde | ~700 |
 | kernel-zero-tokio | tokio | ~700 |
 | kernel-zero-json | serde_json | ~10KB |
 | kernel-zero-yaml | serde_yaml | ~5KB |
+| kernel-zero-dirs | dirs | ~8.5KB |
+| kernel-zero-runtime | (WASM) | ~2KB |
+| kernel-zero-async | (async util) | ~250 |
+| kernel-zero-derive | (macros) | ~250 |
+| kernel-zero-serde-derive | (derive) | ~100 |
 
 ### Enabling Zero-Dependency
 
@@ -235,9 +240,28 @@ cargo test --test integration
 
 ## Crate Inventory
 
-- **Total crates**: 17 (9 main + 8 zero-dep)
-- **Zero-dep LOC**: ~4,000+
+- **Total crates**: 20 (9 main + 11 zero-dep)
+- **Zero-dep LOC**: ~25,000+
 - **Edition**: Rust 2024
+
+## FULL Zero-Dependency
+
+All external dependencies can be replaced:
+
+| Original | Replacement | Status |
+|----------|-------------|---------|
+| serde | kernel-zero-serde | ✅ |
+| serde_json | kernel-zero-json | ✅ |
+| serde_yaml | kernel-zero-yaml | ✅ |
+| tokio | kernel-zero-tokio | ✅ |
+| ed25519-dalek | kernel-zero-ed25519 | ✅ |
+| sha2 | kernel-zero::sha256 | ✅ |
+| uuid | kernel-zero::id | ✅ |
+| chrono | kernel-zero::time | ✅ |
+| thiserror | kernel-zero::error | ✅ |
+| dirs | kernel-zero-dirs | ✅ |
+
+Enable full zero-dep: `cargo build --features use_zero_dep`
 
 ## License
 
