@@ -1,14 +1,5 @@
 //! KernelClaw Crypto - Ed25519 signing with optional zero-dep
 
-/// Use zero-dep Ed25519 implementation if available
-#[cfg(feature = "use_zero_ed25519")]
-pub use kernel_zero_ed25519::signing::{generate_keypair, create_receipt, verify_receipt, SigningKeyPair};
-/// Use standard ed25519-dalek otherwise
-#[cfg(not(feature = "use_zero_ed25519"))]
-pub use ed25519_dalek::{SigningKeyPair, Signature, Signer, Verifier};
-
-#[cfg(not(feature = "use_zero_ed25519"))]
-use ed25519_dalek::{SigningKeypair, Signer, Verifier};
 use serde::{Deserialize, Serialize};
 
 /// Receipt for execution records
@@ -22,46 +13,150 @@ pub struct Receipt {
     pub signature: String,
 }
 
-/// Generate a new keypair
-#[cfg(not(feature = "use_zero_ed25519"))]
-pub fn generate_keypair() -> SigningKeyPair {
-    let mut csprng = rand::thread_rng();
-    SigningKeypair::generate(&mut csprng)
-}
+// ============================================================================
+// ZERO-DEPENDENCY ED25519
+// ============================================================================
 
-/// Create a signed receipt
-#[cfg(not(feature = "use_zero_ed25519"))]
-pub fn create_receipt(
-    id: &str,
-    action: &str,
-    content: &str,
-    outcome: &str,
-    kp: &SigningKeyPair,
-) -> Result<Receipt, String> {
-    let payload = format!("{}:{}:{}:{}:{}", id, action, content, outcome, kp.verifying_key());
-    let signature = kp.sign(payload.as_bytes());
+#[cfg(feature = "use_zero_ed25519")]
+mod zero_dep {
+    use super::*;
+    use kernel_zero_ed25519::signing::{generate_keypair as gen_kp, sign, verify};
     
-    Ok(Receipt {
-        id: id.to_string(),
-        timestamp: std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs() as i64,
-        action: action.to_string(),
-        outcome: outcome.to_string(),
-        content: content.to_string(),
-        signature: base64_encode(&signature.to_bytes()),
-    })
+    pub fn generate_keypair() -> super::KeyPair {
+        let kp = gen_kp();
+        super::KeyPair {
+            signing: kp.secret.to_bytes(),
+            verifying: kp.verifying_key,
+        }
+    }
+    
+    pub fn create_receipt(
+        id: &str,
+        action: &str,
+        content: &str,
+        outcome: &str,
+        kp: &super::KeyPair,
+    ) -> Result<super::Receipt, String> {
+        use kernel_zero::sha256::Sha256;
+        
+        let payload = format!("{}:{}:{}:{}", id, action, content, outcome);
+        let signature = sign(payload.as_bytes(), &kernel_zero_ed25519::signing::KeyPair {
+            secret: kp.signing,
+            public: kp.verifying,
+        });
+        
+        Ok(super::Receipt {
+            id: id.to_string(),
+            timestamp: kernel_zero::time::now(),
+            action: action.to_string(),
+            outcome: outcome.to_string(),
+            content: content.to_string(),
+            signature: super::base64_encode(&signature),
+        })
+    }
+    
+    pub fn verify_receipt(receipt: &super::Receipt, pk: &[u8; 32]) -> bool {
+        use kernel_zero_ed25519::signing::verify;
+        
+        let payload = format!("{}:{}:{}:{}", receipt.id, receipt.action, receipt.content, receipt.outcome);
+        let sig_bytes = match super::base64_decode(&receipt.signature) {
+            Ok(s) if s.len() == 64 => {
+                let mut arr = [0u8; 64];
+                arr.copy_from_slice(&s);
+                arr
+            }
+            _ => return false,
+        };
+        
+        verify(payload.as_bytes(), &sig_bytes, pk)
+    }
+    
+    /// KeyPair for zero-dep
+    pub struct KeyPair {
+        pub signing: [u8; 32],
+        pub verifying: [u8; 32],
+    }
 }
 
-/// Verify a receipt
+// ============================================================================
+// STANDARD ED25519-DALEK
+// ============================================================================
+
 #[cfg(not(feature = "use_zero_ed25519"))]
-pub fn verify_receipt(receipt: &Receipt, pk: &VerifyingKey) -> bool {
-    let payload = format!("{}:{}:{}:{}:{}", receipt.id, receipt.action, receipt.content, receipt.outcome, pk);
-    let sig_bytes = base64_decode(&receipt.signature).ok()?;
-    let signature = Signature::from_bytes(&sig_bytes);
-    pk.verify(payload.as_bytes(), &signature).is_ok()
+mod std_dep {
+    use super::*;
+    use ed25519_dalek::{SigningKey, VerifyingKey, Signer, Verifier};
+    
+    pub struct KeyPair {
+        pub signing: SigningKey,
+        pub verifying: VerifyingKey,
+    }
+    
+    impl From<(SigningKey, VerifyingKey)> for KeyPair {
+        fn from((signing, verifying): (SigningKey, VerifyingKey)) -> Self {
+            KeyPair { signing, verifying }
+        }
+    }
+    
+    pub fn generate_keypair() -> KeyPair {
+        use rand::rngs::OsRng;
+        let signing = SigningKey::generate(&mut OsRng);
+        let verifying = signing.verifying_key();
+        KeyPair { signing, verifying }
+    }
+    
+    pub fn create_receipt(
+        id: &str,
+        action: &str,
+        content: &str,
+        outcome: &str,
+        kp: &KeyPair,
+    ) -> Result<super::Receipt, String> {
+        let payload = format!("{}:{}:{}:{}", id, action, content, outcome);
+        let signature = kp.signing.sign(payload.as_bytes());
+        
+        Ok(super::Receipt {
+            id: id.to_string(),
+            timestamp: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs() as i64,
+            action: action.to_string(),
+            outcome: outcome.to_string(),
+            content: content.to_string(),
+            signature: super::base64_encode(&signature.to_bytes()),
+        })
+    }
+    
+    pub fn verify_receipt(receipt: &super::Receipt, pk: &VerifyingKey) -> bool {
+        let payload = format!("{}:{}:{}:{}", receipt.id, receipt.action, receipt.content, receipt.outcome);
+        let sig_bytes = match super::base64_decode(&receipt.signature) {
+            Ok(s) => s,
+            Err(_) => return false,
+        };
+        
+        if sig_bytes.len() != 64 { return false; }
+        let mut arr = [0u8; 64];
+        arr.copy_from_slice(&sig_bytes);
+        let signature = ed25519_dalek::Signature::from_bytes(&arr);
+        
+        pk.verify(payload.as_bytes(), &signature).is_ok()
+    }
 }
+
+// ============================================================================
+// PUBLIC API
+// ============================================================================
+
+#[cfg(feature = "use_zero_ed25519")]
+pub use zero_dep::{KeyPair, generate_keypair, create_receipt, verify_receipt};
+
+#[cfg(not(feature = "use_zero_ed25519"))]
+pub use std_dep::{KeyPair, generate_keypair, create_receipt, verify_receipt};
+
+// ============================================================================
+// BASE64 (INLINE - ALWAYS ZERO-DEP)
+// ============================================================================
 
 /// Simple base64 encoding (inline, replaces base64 crate)
 pub fn base64_encode(data: &[u8]) -> String {

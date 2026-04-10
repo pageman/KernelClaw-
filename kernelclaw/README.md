@@ -1,6 +1,6 @@
 # KernelClaw - Agent Kernel
 
-**Status**: v1.3.0 - Zero-Dependency in Principle
+**Status**: v0.1.4 - Zero-Dependency Optional Wiring
 
 ## About - The Austen Allred Concern
 
@@ -51,11 +51,24 @@ https://x.com/Austen/status/2042444789891654076
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v0.1.4 | 2026-04-10 | Optional zero-dep wiring, integration tests |
 | v1.3.0 | 2026-04-10 | Full lite serde + tokio |
 | v1.2.0 | 2026-04-10 | Lite implementations |
 | v1.1.0 | 2026-04-10 | Scaffolding expansion |
 | v1.0.3 | 2026-04-10 | Honest assessment |
-| v1.0 | 2026-04-10 | FULL ZERO-DEP milestone |
+
+## Feature Flags
+
+```toml
+[features]
+default = ["use_std_deps"]  # Use standard deps (serde, tokio, ed25519-dalek)
+use_zero_dep = []          # Enable zero-dep alternatives
+```
+
+When `use_zero_dep` is enabled:
+- `serde` → `kernel-zero-serde`
+- `tokio` → `kernel-zero-tokio`
+- `ed25519-dalek` → `kernel-zero-ed25519`
 
 ## Crate Inventory
 

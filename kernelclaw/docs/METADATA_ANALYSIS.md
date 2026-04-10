@@ -1,9 +1,9 @@
-# METADATA_ANALYSIS.md - KernelClaw v1.3.0
+# METADATA_ANALYSIS.md - KernelClaw v0.1.4
 
 ## Repository Overview
 
 - **Repository**: pageman/KernelClaw-
-- **HEAD**: c8088ab (v1.3.0)
+- **HEAD**: (pending commit)
 - **Version**: 0.1.4
 - **Edition**: 2024 (Rust edition)
 

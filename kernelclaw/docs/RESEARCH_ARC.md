@@ -1,16 +1,29 @@
 # RESEARCH_ARC.md - KernelClaw Research Journey
 
-## v1.3.0 (2026-04-10 19:42) - Zero-Dependency in Principle
+## v0.1.4 (2026-04-10 19:49) - Optional Zero-Dependency Wiring
 
-### Full Implementations
+### Feature Flags
 
-- **kernel-zero-serde**: Full (~31KB) - Serialize/Deserialize traits, JSON/TOML serializers, struct/enum macros
-- **kernel-zero-tokio**: Full (~21KB) - multi-threaded runtime, TCP/UDP, process, fs
+```toml
+[features]
+default = ["use_std_deps"]  # Default: use standard deps
+use_zero_dep = []           # Optional: use zero-dep alternatives
+```
 
-### Zero-Dep Claim
+### Wiring Implemented
 
-- Full lite replacements exist for: serde, tokio, chrono, uuid, sha2, thiserror, ed25519-dalek
-- Can now claim: "Zero-dependency in principle"
+- **kernel-crypto**: Now has optional `use_zero_ed25519` feature flag
+- **base64**: Always inline (zero-dep)
+- **Cargo.toml**: Added feature flags and zero-dep alternatives
+
+### Integration Tests
+
+Added `tests/integration.rs` with:
+- kernel_zero tests (time, id, sha256, error)
+- kernel_zero_serde tests (primitives, struct, vec)
+- kernel_zero_tokio tests (runtime, spawn, sleep, mutex, channel)
+- kernel_zero_ed25519 tests (keypair, sign, verify)
+- Integration tests (memory, policy, base64)
 
 ## v1.2.0 (2026-04-10 19:30) - Lite Implementations
 
