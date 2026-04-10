@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "kernel-zero-dirs",
     "kernel-zero-json",
     "kernel-zero-yaml",
     "kernel-zero-tokio",
@@ -31,7 +32,7 @@ license = "MIT OR Apache-2.0"
 [features]
 default = ["use_std_deps"]
 use_std_deps = []
-use_zero_dep = ["kernel-zero-serde", "kernel-zero-json", "kernel-zero-yaml", "kernel-zero-tokio", "kernel-zero-ed25519"]
+use_zero_dep = ["kernel-zero-serde", "kernel-zero-json", "kernel-zero-yaml", "kernel-zero-tokio", "kernel-zero-ed25519", "kernel-zero-dirs"]
 
 # MINIMAL core dependencies
 [workspace.dependencies]
@@ -40,11 +41,11 @@ serde_json = "1"
 serde_yaml = "0.9"
 tokio = { version = "1", features = ["rt", "sync"], optional = true }
 ed25519-dalek = { version = "2", features = ["rand_core"], optional = true }
-sha2 = "0.10"
+sha2 = { version = "0.10", optional = true }
 uuid = { version = "1", features = ["v4"], optional = true }
 chrono = { version = "0.4", features = ["serde"], optional = true }
 thiserror = { version = "2", optional = true }
-dirs = "5"
+dirs = { version = "5", optional = true }
 
 # Zero-dependency alternatives
 kernel-zero = { path = "kernel-zero" }
@@ -53,6 +54,7 @@ kernel-zero-json = { path = "kernel-zero-json", optional = true }
 kernel-zero-yaml = { path = "kernel-zero-yaml", optional = true }
 kernel-zero-tokio = { path = "kernel-zero-tokio", optional = true }
 kernel-zero-ed25519 = { path = "kernel-zero-ed25519", optional = true }
+kernel-zero-dirs = { path = "kernel-zero-dirs", optional = true }
 
 [profile.release]
 opt-level = "z"

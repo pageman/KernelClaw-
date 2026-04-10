@@ -1,0 +1,8 @@
+[package]
+name = "kernel-zero-dirs"
+version = "0.1.0"
+edition = "2021"
+description = "Zero-dep directories and paths (FULL version)"
+
+[dependencies]
+# ZERO external deps!
