@@ -1,6 +1,6 @@
 # KernelClaw - Agent Kernel
 
-**Status**: v0.2.0 - VSIK (Verifiable Self-Improving Kernel)
+**Status**: v0.2.1 - VSIK + Knowledge Graph
 
 > "VSIK MVP implemented - verifiable self-improvement loop active with mandatory user review."
 
@@ -9,14 +9,15 @@
 KernelClaw is an attempt to implement the agent kernel from:
 https://x.com/Austen/status/2042444789891654076
 
-## Implementation Status (v0.2.0)
+## Implementation Status (v0.2.1)
 
 | Concern | Status | Notes |
 |---------|--------|-------|
 | Append-Only Memory | ✅ Working | Real JSONL with checksums |
 | Policy at Tool Boundary | ✅ Working | allowed_paths enforced |
 | Orchestrator Pipeline | ✅ Working | Full pipeline with policy |
-| Self-Improvement (VSIK) | ✅ NEW | Proposal → Review → Approve |
+| Self-Improvement (VSIK) | ✅ Working | Proposal → Review → Approve |
+| **Knowledge Graph** | ✅ NEW | Graph-aware proposal generation |
 | Typed Planning | ⚠️ Heuristic | Rule-based inference |
 | Exception-Only UX | ⚠️ Partial | Some prints on success |
 | Daemon | ⚠️ Basic | Unix socket, limited |

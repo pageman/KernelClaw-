@@ -1,7 +1,8 @@
 //! KernelClaw Core - FULL orchestration pipeline
-//! parse -> validate -> execute -> receipt -> record -> improve
+//! parse -> validate -> execute -> record -> improve (VSIK + Knowledge Graph)
 
 pub mod proposal;
+pub mod graph;
 
 use serde::{Deserialize, Serialize};
 use kernel_policy::Policy;
