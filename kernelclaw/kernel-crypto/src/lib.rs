@@ -4,7 +4,7 @@
 use ed25519_dalek::{SigningKey, VerifyingKey};
 use rand::rngs::OsRng;
 use serde::{Deserialize, Serialize};
-use sha2::{Sha256, Digest};
+use kernel_zero::sha256::Sha256;
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use std::path::PathBuf;
 use std::fs;
@@ -64,7 +64,7 @@ pub fn verify(data: &[u8], signature: &[u8], key: &VerifyingKey) -> bool {
 
 /// Compute SHA256 hash
 pub fn hash(data: &[u8]) -> Vec<u8> {
-    let mut hasher = Sha256::new();
+    let mut hasher = kernel_zero::sha256::Sha256::new();
     hasher.update(data);
     hasher.finalize().to_vec()
 }

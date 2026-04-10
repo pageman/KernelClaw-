@@ -7,7 +7,7 @@ use std::fs;
 use std::sync::Mutex;
 use kernel_zero::id::random_id;
 use kernel_zero::time::now as utc_now;
-use sha2::{Sha256, Digest};
+use kernel_zero::sha256::Sha256;
 
 /// Ledger entry type
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -60,7 +60,7 @@ impl MemoryLedger {
     
     /// Compute SHA256 checksum for integrity verification
     fn compute_checksum(entry: &LedgerEntry) -> String {
-        let mut hasher = Sha256::new();
+        let mut hasher = kernel_zero::sha256::Sha256::new();
         hasher.update(entry.id.as_bytes());
         hasher.update(entry.timestamp.to_be_bytes());
         hasher.update(entry.content.as_bytes());

@@ -2,9 +2,9 @@
 //! Schema enforced, NOT just raw string
 
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
+use kernel_zero::error::Error;
 
-#[derive(Error, Debug)]
+##[derive(Debug)]
 pub enum LlmError {
     #[error("Parse: {0}")]
     Parse(String),

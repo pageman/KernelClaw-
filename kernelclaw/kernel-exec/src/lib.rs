@@ -4,11 +4,11 @@
 mod tools;
 
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
+use kernel_zero::error::Error;
 
 pub use tools::{file_read, file_read_dir, echo_tool, calendar_summary, health_check, ToolPolicy};
 
-#[derive(Error, Debug)]
+##[derive(Debug)]
 pub enum ExecError {
     #[error("Capability DENIED: {0}")]
     Denied(String),
