@@ -77,7 +77,7 @@ impl Runtime {
         F: Future<Output = ()> + Send + 'static,
     {
         let id = TASK_ID.fetch_add(1, Ordering::Relaxed);
-        let waker = todo!(); // Would create custom waker
+        let waker = unsafe { Waker::from_raw(RawWaker::new(std::ptr::null(), &VTABLE)) };
         
         let task = Task {
             future: Box::pin(future),

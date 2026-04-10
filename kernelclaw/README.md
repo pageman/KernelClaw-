@@ -4,9 +4,15 @@ A production-oriented agent kernel with enforced constraints.
 
 ## About - The Austen Allred Concern
 
-KernelClaw emerged from Austen Allred's "Agent Desiderata" - a set of principles for building trustworthy autonomous agents:
+KernelClaw emerged from Austen Allred's "Agent Desiderata" - a set of principles for building trustworthy autonomous agents.
 
-1. **Zero-dependency static binary** - Minimal attack surface, no runtime deps
+The original thread: https://x.com/Austen/status/2042444789891654076
+
+### The 4-Point Desiderata
+
+From that discussion, the four core concerns emerged:
+
+1. **Zero-dependency static binary** - Minimal attack surface, no runtime dependencies
 2. **Append-only signed memory** - Tamper-proof audit trail with cryptographic verification
 3. **Capability-based execution** - Policy gates at tool boundary, not just capability labels
 4. **Exception-only UX** - Silent on success, noisy only on failure
