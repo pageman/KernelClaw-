@@ -1,131 +1,117 @@
 # KernelClaw - Agent Kernel
 
-A production-oriented agent kernel with enforced constraints.
+**Status**: v0.1.6 - Working prototype, NOT production-ready
 
 ## About - The Austen Allred Concern
 
-KernelClaw emerged from Austen Allred's "Agent Desiderata" - a set of principles for building trustworthy autonomous agents.
+KernelClaw is an experiment responding to Austen Allred's "Agent Desiderata" thread:
+https://x.com/Austen/status/2042444789891654076
 
-The original thread: https://x.com/Austen/status/2042444789891654076
+### The 4-Point Desiderata (Goals We Aim For)
 
-### The 4-Point Desiderata
+1. **Zero-dependency static binary** - Aim for minimal runtime deps
+2. **Append-only signed memory** - Goal: durable audit trail
+3. **Capability-based execution** - Goal: policy-gated tools
+4. **Exception-only UX** - Goal: silent success, noisy failure
 
-From that discussion, the four core concerns emerged:
+**Current Reality**: We are working toward these - NOT yet achieved.
 
-1. **Zero-dependency static binary** - Minimal attack surface, no runtime dependencies
-2. **Append-only signed memory** - Tamper-proof audit trail with cryptographic verification
-3. **Capability-based execution** - Policy gates at tool boundary, not just capability labels
-4. **Exception-only UX** - Silent on success, noisy only on failure
-
-KernelClaw is a proof-of-concept implementation of these principles.
-
-## Design Thesis
-
-KernelClaw addresses core concerns in autonomous agent execution:
-
-1. **Minimal-Dependency Static Binary** - Targeted ~10 crates, not 50+
-2. **Append-Only Signed Memory** - Durable JSONL ledger with checksums  
-3. **Capability-Based Execution** - Policy-gated tool execution at tool boundary
-4. **Exception-Only UX** - Silent on success, noisy only on failures
-
-## Implementation Status
+## What IS Implemented
 
 | Concern | Status | Notes |
 |---------|--------|-------|
-| Crypto Receipts | ✅ Strong | Ed25519 signing, receipt verification |
-| Append-Only Memory | ✅ Strong | JSONL persistence, SHA256 checksums |
-| Typed Planning | ✅ Strong | Structured ParsedGoal with validation |
-| Capability Enforcement | ✅ Strong | Policy at tool boundary with allowlist |
-| WASM Isolation | ✅ Strong | wasmtime runtime integrated |
-| Exception-Only UX | ✅ Strong | CLI silent on success |
-| **Minimal Dependencies** | ✅ Strong | ~10 crates |
+| Crypto Receipts | ✅ Working | Ed25519 signing, verification exists |
+| Policy Engine | ✅ Working | YAML loading, structure exists |
+| Executor Base | ⚠️ Partial | Native dispatch, not sandboxed yet |
 
-## Zero-Dependency Modules (Proof of Principle)
+## What's NOT Implemented (Honest Assessment)
 
-### Production-Ready Zone
-| Module | Status | Description |
-|--------|--------|-------------|
-| `kernel-zero` | ✅ Core Ready | Time, ID, Error, SHA256 |
-| `kernel-zero-async` | ⚠️ Minimal | Async runtime stub |
-| `kernel-zero-serde` | ⚠️ Minimal | Serde stub |
+- **Append-only Durable Memory**: Currently in-memory only (see `#![stub]` markers)
+- **Typed Goal Planning**: LLM schema defined but parsing NOT wired to orchestration
+- **WASM Isolation**: Not yet active in execution path
+- **Real Policy Enforcement**: allowed_paths exist in YAML but NOT enforced at file_read boundary
+- **Full Orchestrator**: execute_goal() still stubbed - generates receipts without real execution
+- **Daemon Mode**: Not implemented
 
-### In Development (Production-Ready)
-| Module | Target | Description |
-|--------|--------|-------------|
-| `kernel-zero-ed25519` | Full RFC 8032 | Complete Ed25519 with curve math |
-| `kernel-zero-runtime` | Full tokio | Complete async runtime |
-| `kernel-zero-derive` | Full serde_derive | Derive macros |
+The README and documentation describe TARGET state. Implementation follows.
 
-## Dependencies (v0.1.5)
-
-### Core (Required)
-- serde - For derive macros on Policy, Receipt, etc.
-- tokio - For async runtime
-
-### Utilities (Could be zero-dep)
-- uuid → use kernel-zero id module
-- chrono → use kernel-zero time module  
-- thiserror → use kernel-zero error module
-
-## Architecture
+## Dependencies (v0.1.6)
 
 ```
-kernel-core/       - Orchestration (parse -> validate -> execute -> receipt -> record)
-kernel-exec/      - Capability-gated executor + WASM runtime
-kernel-policy/    - YAML policy with invariants, allowlists
-kernel-memory/    - Append-only JSONL with checksums
-kernel-crypto/    - Ed25519 signing
-kernel-llm/       - Typed goal parsing
-kernel-cli/       - Exception-only CLI
-
-# Zero-dep (proof of principle)
-kernel-zero/       - Core utilities (time, id, error, sha256, json, toml)
-kernel-zero-async/ - Async runtime stub
-kernel-zero-serde/ - Serde stub
+Core:
+  - serde (required for derive macros)
+  - tokio (async runtime)
+  
+Substitutable (zero-dep POC exists):
+  - chrono      → kernel-zero time
+  - uuid       → kernel-zero id
+  - thiserror  → kernel-zero error
+  - sha2       → kernel-zero sha256
+  - ed25519    → kernel-zero-ed25519
 ```
 
-## Zero-Dependency Progress
+## Honest Architecture
 
-### Phase 1: Core Utilities (Complete ✅)
-- time.rs - Unix timestamps
-- id.rs - UUID generation
-- error.rs - Error handling
-- sha256.rs - SHA256 hashing
-- json.rs - JSON parsing
-- toml.rs - TOML parsing
-
-### Phase 2: Crypto (In Progress)
-- ed25519.rs - ⚠️ Simplified (hash-based)
-- **Target**: Full RFC 8032 curve operations
-
-### Phase 3: Async Runtime (Stub)
-- Runtime with worker threads
-- **Target**: Full tokio replacement
-
-### Phase 4: Derive Macros (Stub)
-- Manual Serialize/Deserialize
-- **Target**: Full serde_derive replacement
-
-## Policy
-
-Default policy enforces:
-- file_read: only /tmp/, /var/tmp/, ~/Documents/
-- file_write: disabled by default  
-- shell: disabled
-- WASM: enabled (sandboxed)
-
-Edit `policy.yaml` to adjust.
-
-## Quick Start
-
-```bash
-cargo build --release
-./target/release/kernelclaw init
-./target/release kernelclaw status
 ```
+kernel-core/       - Orchestrator (PARITAL - stubbed pipeline)
+kernel-exec/       - Native executor (NOT sandboxed)
+kernel-policy/     - YAML → in-memory (NOT enforced at boundary)
+kernel-memory/     - In-memory only (NOT durable)
+kernel-crypto/     - Working Ed25519
+kernel-llm/        - Schema exists (NOT wired up)
+kernel-cli/        - Working CLI
+```
+
+## Key Implementation Gaps (v0.1.6)
+
+### 1. Policy at Tool Boundary
+```rust
+// CURRENT (not enforced):
+pub fn file_read(path: &str) -> Result<String, String> {
+    if path.contains("..") { return Err(..); }
+    fs::read_to_string(p)  // Just reads! No policy check here!
+}
+
+// TARGET: Enforce policy at boundary
+pub fn file_read(path: &str, policy: &ToolPolicy) {
+    if !is_path_allowed(path, policy) { return Err(...); }
+}
+```
+
+### 2. Memory Durability
+```rust
+// CURRENT (in-memory):
+entries: Mutex<Vec<LedgerEntry>>  // Lost on restart!
+
+// TARGET: JSONL with checksums
+```
+
+### 3. Orchestrator Pipeline
+```rust
+// CURRENT (stub):
+pub fn execute_goal(&mut self, raw_goal: &str) -> Receipt {
+    // Just creates receipt!
+    create_receipt(raw_goal, "execute_goal", ...)
+}
+
+// TARGET: Full pipeline
+// 1. Parse via LLM → StructuredGoal
+// 2. Validate policy
+// 3. Execute via capability-gated executor
+// 4. Sign receipt
+// 5. Append to ledger
+```
+
+## Contributing
+
+The repo is organized around addressing each gap. See:
+- `kernel-zero-*/` for zero-dependency implementations
+- `kernel-*/src/*.rs` for actual execution paths
+
+**No CLA required** - MIT license.
 
 ## Version
 
-v0.1.5 - Zero-dependency proof of principle
+v0.1.6 - Honest prototype
 
-License: MIT
+**License**: MIT

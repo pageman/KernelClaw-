@@ -1,29 +1,32 @@
-# KernelClaw Policy - ENFORCED constraints v0.1.3
-# Strong enforcement at actual tool boundary
+# KernelClaw Policy - ENFORCEMENT GOALS
+# v0.1.6 - NOT YET ENFORCED at tool boundary
 
-version: "0.1.3"
+version: "0.1.6"
 
-# INVARIANTS - MUST NEVER be violated
+# INVARIANTS - Goals to enforce
 invariants:
   - name: no_network_access
-    description: "No network requests allowed"
-  - name: no_shell_access
-    description: "No shell command execution"  
+    description: "Goal: No network requests - NOT YET ENFORCED"
+  - name: no_shell_access  
+    description: "Goal: No shell commands - NOT YET ENFORCED"
   - name: no_file_write_default
-    description: "File writes must be explicitly enabled"
+    description: "Goal: File writes disabled - NOT YET ENFORCED"
 
 # ACTIONS REQUIRING APPROVAL
+# NOT YET IMPLEMENTED
 requires_approval:
   - file_write
   - capability_escalation
 
-# FORBIDDEN - Always denied
+# FORBIDDEN - Goals
+# NOT YET ENFORCED at tool boundary
 forbidden:
   - network_requests
   - shell_exec
   - system_state_modification
 
-# READONLY PATHS - Cannot be modified
+# READONLY PATHS - Goals
+# NOT YET CHECKED before file_read
 readonly_paths:
   - ~/.kernelclaw/keys/
   - ~/.kernelclaw/receipts/
@@ -32,7 +35,8 @@ readonly_paths:
   - ~/.ssh/
   - ~/.aws/
 
-# CAPABILITY ALLOWLIST - ACTUALLY ENFORCED at tool boundary
+# CAPABILITY ALLOWLIST - Goals, NOT Enforced
+# file_read reads allowed_paths but NOT checked in actual file_read()!
 capability_allowlist:
   file_read:
     enabled: true
