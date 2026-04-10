@@ -1,5 +1,7 @@
 //! KernelClaw Core - FULL orchestration pipeline
-//! parse -> validate -> execute -> receipt -> record
+//! parse -> validate -> execute -> receipt -> record -> improve
+
+pub mod proposal;
 
 use serde::{Deserialize, Serialize};
 use kernel_policy::Policy;

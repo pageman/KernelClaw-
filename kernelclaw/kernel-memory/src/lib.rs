@@ -12,7 +12,7 @@ use kernel_zero::sha256::Sha256;
 /// Ledger entry type
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum EntryType {
-    Fact, Event, GoalOutcome, ReceiptRef, Summary, Exception,
+    Fact, Event, GoalOutcome, ReceiptRef, Summary, Exception, Proposal,
 }
 
 /// Ledger entry with checksum

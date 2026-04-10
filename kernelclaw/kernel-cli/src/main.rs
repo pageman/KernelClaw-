@@ -26,6 +26,14 @@ enum Commands {
     Receipts { count: Option<usize> },
     /// Start daemon
     Daemon,
+    /// List improvement proposals
+    ProposalList,
+    /// Show proposal details
+    ProposalShow { id: String },
+    /// Approve a proposal
+    ProposalApprove { id: String },
+    /// Reject a proposal
+    ProposalReject { id: String },
 }
 
 fn main() -> ExitCode {
@@ -99,6 +107,66 @@ fn main() -> ExitCode {
                 }
                 Err(e) => {
                     eprintln!("Failed to start daemon: {}", e);
+                    ExitCode::FAILURE
+                }
+            }
+        }
+        
+        // === IMPROVEMENT PROPOSAL COMMANDS ===
+        
+        Some(Commands::ProposalList) => {
+            match list_proposals() {
+                Ok(proposals) => {
+                    if proposals.is_empty() {
+                        println!("No proposals found.");
+                    } else {
+                        for p in proposals {
+                            println!("{} - {} - {}", p.0, p.1, p.2);
+                        }
+                    }
+                    ExitCode::SUCCESS
+                }
+                Err(e) => {
+                    eprintln!("Error: {}", e);
+                    ExitCode::FAILURE
+                }
+            }
+        }
+        
+        Some(Commands::ProposalShow { id }) => {
+            match show_proposal(&id) {
+                Ok(details) => {
+                    println!("{}", details);
+                    ExitCode::SUCCESS
+                }
+                Err(e) => {
+                    eprintln!("Error: {}", e);
+                    ExitCode::FAILURE
+                }
+            }
+        }
+        
+        Some(Commands::ProposalApprove { id }) => {
+            match approve_proposal(&id) {
+                Ok(_) => {
+                    println!("Proposal {} approved and applied.", id);
+                    ExitCode::SUCCESS
+                }
+                Err(e) => {
+                    eprintln!("Error: {}", e);
+                    ExitCode::FAILURE
+                }
+            }
+        }
+        
+        Some(Commands::ProposalReject { id }) => {
+            match reject_proposal(&id) {
+                Ok(_) => {
+                    println!("Proposal {} rejected.", id);
+                    ExitCode::SUCCESS
+                }
+                Err(e) => {
+                    eprintln!("Error: {}", e);
                     ExitCode::FAILURE
                 }
             }
