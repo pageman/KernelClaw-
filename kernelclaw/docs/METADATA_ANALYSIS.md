@@ -1,12 +1,12 @@
-# METADATA_ANALYSIS.md - KernelClaw v0.1.6
+# METADATA_ANALYSIS.md - KernelClaw v0.1.6 (Honest)
 
 ## Repository Overview
 
 - **Repository**: pageman/KernelClaw-
-- **HEAD**: f7de675 (v0.1.6)
+- **HEAD**: afc66f1 (v0.1.6 - Honest Assessment)
 - **Version**: 0.1.6
-- **Edition**: 2024 (Rust edition)
-- **License**: MIT OR Apache-2.0
+- **Edition**: 2024
+- **Status**: Partially credible prototype (not hardened proof)
 
 ## Crate Inventory
 
@@ -14,173 +14,138 @@
 
 | Crate | Purpose | Dependencies |
 |-------|---------|--------------|
-| kernel-cli | CLI entry point | tokio, serde |
-| kernel-core | Orchestration pipeline | tokio, serde, serde_yaml |
-| kernel-crypto | Ed25519 signing + receipts | serde, thiserror |
-| kernel-daemon | Unix socket server | dirs |
-| kernel-exec | Tool execution + WASM | tokio, serde, serde_json |
+| kernel-cli | CLI entry | tokio, dirs |
+| kernel-core | Orchestration | tokio, serde, serde_yaml |
+| kernel-crypto | Signing | thiserror |
+| kernel-daemon | Unix socket | dirs |
+| kernel-exec | Execution | tokio, serde, serde_json |
 | kernel-llm | Ollama client | tokio |
-| kernel-memory | JSONL ledger | kernel-zero (time, id, sha256) |
-| kernel-notify | System notifications | - |
-| kernel-policy | YAML policy engine | serde_yaml |
+| kernel-memory | JSONL ledger | kernel-zero |
+| kernel-notify | Notifications | - |
+| kernel-policy | Policy engine | serde_yaml |
 
-### Zero-Dependency Modules (8 crates)
+### Zero-Dependency Modules (11 crates)
 
-| Crate | LOC | Purpose | Status |
-|-------|-----|---------|--------|
-| kernel-zero | ~800 | time, id, error, sha256, json, toml | ✅ Stable |
-| kernel-zero-ed25519 | ~500 | Full RFC 8032 | ✅ Full |
-| kernel-zero-async | 253 | Task, Waker, pinned | ✅ Working |
-| kernel-zero-derive | 252 | Basic derive | ✅ Working |
-| kernel-zero-runtime | 551 | WASM runtime | ✅ Integrated |
-| kernel-zero-serde-derive | 97 | Derive macro scaffold | ✅ Working |
-| kernel-zero-serde | 714 | Full Serialize/Deserialize | ✅ Full |
-| kernel-zero-tokio | 712 | Full async runtime | ✅ Full |
+| Crate | LOC | Replaces | Status |
+|------|-----|----------|--------|
+| kernel-zero | ~800 | chrono, uuid, thiserror | ✅ Working |
+| kernel-zero-ed25519 | ~500 | ed25519-dalek | ✅ Working |
+| kernel-zero-serde | ~700 | serde | ✅ Working |
+| kernel-zero-tokio | ~700 | tokio | ✅ Working |
+| kernel-zero-json | ~10KB | serde_json | ✅ Working |
+| kernel-zero-yaml | ~5KB | serde_yaml | ✅ Working |
+| kernel-zero-dirs | ~8.5KB | dirs | ✅ Working |
+| kernel-zero-runtime | ~2KB | - | ⚠️ Stub |
+| kernel-zero-async | 250 | - | ✅ Working |
+| kernel-zero-derive | 250 | - | ✅ Working |
+| kernel-zero-serde-derive | 100 | - | ✅ Working |
 
-### Zero-Dependency Summary
+## Implementation Status (v0.1.6)
 
-- **Total crates**: 17 (9 main + 8 zero-dep)
-- **Zero-dep LOC**: ~4,000+ lines
-- **Zero-dep modules**: All 8 ready for use
+| Concern | Status | Notes |
+|---------|--------|-------|
+| Append-Only Memory | ✅ Working | Real JSONL with checksums |
+| Policy at Tool Boundary | ✅ Working | allowed_paths enforced |
+| Orchestrator Pipeline | ✅ Working | Full pipeline with policy |
+| Typed Planning | ⚠️ Heuristic | Rule-based, not model-backed |
+| Exception-Only UX | ⚠️ Partial | Some prints on success |
+| Daemon | ⚠️ Basic | Unix socket only |
+| WASM Runtime | ⚠️ Stub | Not wired in execution path |
+| Zero-Dependency | ⚠️ Optional | Feature flags available |
 
 ## External Dependencies
 
-| Crate | Status | Replacement Available |
-|-------|--------|-------------------|
-| chrono | ✅ Replaced | kernel_zero::time |
-| uuid | ✅ Replaced | kernel_zero::id |
-| sha2 | ✅ Replaced | kernel_zero::sha256 |
-| thiserror | ✅ Replaced | kernel_zero::error |
-| serde | ⚠️ Optional | kernel-zero-serde |
-| tokio | ⚠️ Optional | kernel-zero-tokio |
-| ed25519-dalek | ⚠️ Optional | kernel-zero-ed25519 |
-| base64 | ✅ Always inline | - |
-| dirs | ✅ Inlined | std::env::var |
-| rand | ✅ Inlined | std::random |
+| Dependency | Status | Replacement |
+|------------|--------|-------------|
+| serde | Optional | kernel-zero-serde |
+| serde_json | Optional | kernel-zero-json |
+| serde_yaml | Optional | kernel-zero-yaml |
+| tokio | Optional | kernel-zero-tokio |
+| dirs | Optional | kernel-zero-dirs |
+| thiserror | Optional | kernel-zero (error) |
+| uuid | Optional | kernel-zero (id) |
+| chrono | Optional | kernel-zero (time) |
 
-## Feature Flags
+## Honest Assessment
 
-```toml
-[features]
-default = ["use_std_deps"]  # Uses standard deps (serde, tokio, ed25519-dalek)
-use_zero_dep = []          # Uses kernel-zero alternatives
-```
+### What's Actually Working
 
-When `use_zero_dep` is enabled:
-- `serde` → `kernel-zero-serde` (Serialize/Deserialize)
-- `tokio` → `kernel-zero-tokio` (async runtime)
-- `ed25519-dalek` → `kernel-zero-ed25519` (signing)
+- Real durable append-only memory (JSONL with checksums)
+- Policy enforcement at file tool boundary
+- Full orchestration pipeline
+- Unix socket daemon (basic)
+- Ed25519 signing
 
-## Pipeline Status
+### What's Partial/Stub
 
-| Stage | Status | Notes |
-|-------|-------|-------|
-| Parse | ✅ Working | kernel-llm |
-| Validate | ✅ Working | kernel-policy |
-| Execute | ✅ Working | kernel-exec + capability check |
-| Receipt | ✅ Working | Ed25519 signing |
-| Record | ✅ Working | JSONL ledger |
+- Typed planning: Rule-based heuristic (not model-backed)
+- WASM: Runtime exists but not in execution path
+- Exception-only UX: Some commands still print on success
+- Zero-dep: Feature flags available but not wired
 
-## Zero-Dependency Modules Detailed
+### Known Issues
 
-### kernel-zero (~800 LOC)
-Provides:
-- `kernel_zero::time::now()` - Unix timestamp
-- `kernel_zero::id::random_id()` - UUID-like ID
-- `kernel_zero::sha256::Sha256` - hash implementation
-- `kernel_zero::error::Error` - error type
-- `kernel_zero::json::parse()` - JSON parsing
-- `kernel_zero::toml::parse()` - TOML parsing
+1. README claims still slightly outrun code
+2. Typed planning is heuristic, not AI-backed
+3. WASM execution path not wired
+4. Some UX prints on success rather than silent
 
-### kernel-zero-ed25519 (~500 LOC)
-Provides:
-- RFC 8032 compliant Ed25519
-- Full field arithmetic
-- Point operations
-- Key generation, signing, verification
-
-### kernel-zero-serde (~700 LOC)
-Provides:
-- `Serialize` trait
-- `Deserialize` trait
-- `JsonSerializer`, `TomlSerializer`
-- `Serialize!`, `Deserialize!` macros
-
-### kernel-zero-tokio (~700 LOC)
-Provides:
-- `Runtime` with multi-threading
-- `spawn()`, `block_on()`
-- `sync::Mutex`, `sync::channel`
-- `time::timeout`, `Interval`
-- `io::TcpStream`, `TcpListener`
-
-## GoT->CoT->PVL Analysis
+## GoT→CoT→PVL
 
 ### Goal of Task (GoT)
-- **Achieve optional zero-dependency** with feature flags
-- **Maintain standard deps as default** for production
-- **Enable zero-dep via feature flag** for embedded/constrained environments
+- Make fully working kernel implementation
+- Fix remaining blockers
 
 ### Course of Task (CoT)
-1. ✅ Create zero-dep modules (v1.0 - v1.3.0)
-2. ✅ Add feature flags to Cargo.toml (v0.1.4)
-3. ✅ Wire optional zero-dep in kernel-crypto (v0.1.4)
-4. ⏳ Add more zero-dep wiring (future)
-5. ⏳ Add full integration test suite (future)
+- Phase 1: Honest assessment (done)
+- Phase 2: Fix policy wiring
+- Phase 3: Wire WASM execution
+- Phase 4: True exception-only UX
 
-### Parallel Verification List (PVL)
+### Parallel Verification List
+
 | Item | Status |
 |------|--------|
-| Feature flags work | ✅ |
-| kernel-zero-serde compiles | ✅ |
-| kernel-zero-tokio compiles | ✅ |
-| kernel-zero-ed25519 works | ✅ |
-| Integration tests pass | ⏳ |
-| CLI builds | ✅ |
-| Daemon builds | ✅ |
+| Memory durable | ✅ |
+| Policy enforced | ✅ |
+| Daemon basic | ✅ |
+| WASM wired | ❌ Not done |
+| Typed planner | ❌ Heuristic |
+| Exception-only | ❌ Partial |
+
+## Recommended Next Steps
+
+### Priority 1 (Critical)
+1. Wire WASM execution in kernel-exec
+2. Make parse_goal use actual LLM (not rule-based)
+3. True exception-only UX
+
+### Priority 2 (Important)
+4. Wire zero-dep modules as default
+5. Add integration tests
+
+### Priority 3 (Nice to have)
+6. Add more daemon commands
+7. Polish error messages
 
 ## Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
-| v0.1.4 | 2026-04-10 | Optional zero-dep wiring |
-| v1.3.0 | 2026-04-10 | Full lite implementations |
-| v1.2.0 | 2026-04-10 | Lite implementations |
-| v1.1.0 | 2026-04-10 | Scaffolding |
-| v1.0.3 | 2026-04-10 | Honest metadata |
+| v0.1.6 | 2026-04-10 | Honest assessment |
+| v0.1.5 | 2026-04-10 | JSON + YAML zero-dep |
+| v0.1.4 | 2026-04-10 | First zero-dep modules |
+| v1.3.0 | 2026-04-10 | Full implementations |
 
 ## Metrics
 
-- **Total LOC**: ~5,000
-- **Zero-dep LOC**: ~4,000
-- **Crates**: 17
-- **Test coverage**: Integration tests added
-
-## Recommended Next Steps
-
-### Priority 1: More Zero-Dep Wiring
-1. Wire kernel-zero-serde into kernel-memory
-2. Wire kernel-zero-tokio into kernel-llm (if async needed)
-3. Wire remaining zero-dep modules
-
-### Priority 2: Testing
-1. Run cargo test with default features
-2. Run cargo test --features use_zero_dep
-3. Add more unit tests
-
-### Priority 3: Polish
-1. Add doc comments to all public APIs
-2. Fix any compiler warnings
-3. Version bump to 0.2.0
-
-### Priority 4: Documentation
-1. Add examples directory
-2. Add how-to guides
-3. Document zero-dep migration path
+- **Total LOC**: ~30,000
+- **Zero-dep LOC**: ~25,000
+- **Crates**: 20
+- **Truth**: Partially credible prototype
 
 ## Critical Context
 
 - **Repo URL**: https://github.com/pageman/KernelClaw-
 - **Branch**: master
-- **Platform**: Rust 2024 edition
-- **MSRV**: 1.80+ (Rust edition 2024)
+- **Honest Verdict**: Partially credible prototype kernel, but not hardened proof

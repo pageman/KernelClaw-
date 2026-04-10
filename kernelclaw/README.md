@@ -2,9 +2,11 @@
 
 **Status**: v0.1.6 - Honest Assessment
 
+> "Partially credible prototype kernel, but not hardened proof that Austen's kernel has been built."
+
 ## About - The Austen Allred Concern
 
-KernelClaw responds to Austen Allred's "Agent Desiderata":
+KernelClaw is an attempt to implement the agent kernel from:
 https://x.com/Austen/status/2042444789891654076
 
 ## Implementation Status (v0.1.6)
@@ -15,9 +17,9 @@ https://x.com/Austen/status/2042444789891654076
 | Policy at Tool Boundary | ✅ Working | allowed_paths enforced |
 | Orchestrator Pipeline | ✅ Working | Full pipeline with policy |
 | Typed Planning | ⚠️ Heuristic | Rule-based inference |
-| Exception-Only UX | ⚠️ Partial | Some commands print on success |
+| Exception-Only UX | ⚠️ Partial | Some prints on success |
 | Daemon | ⚠️ Basic | Unix socket, limited |
-| WASM Runtime | ⚠️ Stub | Runtime integrated, not wired |
+| WASM Runtime | ⚠️ Stub | Not wired in execution |
 | Zero-Dependency | ⚠️ Optional | Feature flags available |
 
 ## Quick Start
@@ -26,75 +28,24 @@ https://x.com/Austen/status/2042444789891654076
 # Build
 cargo build
 
-# Run CLI
+# Initialize
 cargo run -- init
+
+# Check status
 cargo run -- status
+
+# Run a goal
 cargo run -- run "Write a hello world program"
+
+# List receipts
+cargo run -- receipts
 ```
 
-## Zero-Dependency Options
+## Crate Inventory
 
-### Feature Flags
-
-```toml
-# Cargo.toml
-[features]
-default = ["use_std_deps"]  # Uses standard deps (default)
-# use_zero_dep = []         # Uncomment to use zero-dep alternatives
-```
-
-### Default (Standard Dependencies)
-
-```toml
-[dependencies]
-serde = "1"
-serde_json = "1"
-serde_yaml = "0.9"
-tokio = { version = "1", features = ["rt", "sync"] }
-ed25519-dalek = "2"
-sha2 = "0.10"
-```
-
-### Zero-Dependency Mode
-
-Available zero-dep modules (11 total):
-
-| Module | Replaces | LOC |
-|--------|---------|-----|
-| kernel-zero | chrono, uuid, thiserror | ~800 |
-| kernel-zero-ed25519 | ed25519-dalek | ~500 |
-| kernel-zero-serde | serde | ~700 |
-| kernel-zero-tokio | tokio | ~700 |
-| kernel-zero-json | serde_json | ~10KB |
-| kernel-zero-yaml | serde_yaml | ~5KB |
-| kernel-zero-dirs | dirs | ~8.5KB |
-| kernel-zero-runtime | (WASM) | ~2KB |
-| kernel-zero-async | (async util) | ~250 |
-| kernel-zero-derive | (macros) | ~250 |
-| kernel-zero-serde-derive | (derive) | ~100 |
-
-### Enabling Zero-Dependency
-
-```toml
-# In your Cargo.toml
-[features]
-default = []
-use_zero_dep = [
-    "kernel-zero-serde",
-    "kernel-zero-json", 
-    "kernel-zero-yaml",
-    "kernel-zero-tokio", 
-    "kernel-zero-ed25519",
-]
-
-[dependencies]
-kernel-zero = { path = "kernel-zero" }
-kernel-zero-serde = { path = "kernel-zero-serde" }
-kernel-zero-json = { path = "kernel-zero-json" }
-kernel-zero-yaml = { path = "kernel-zero-yaml" }
-kernel-zero-tokio = { path = "kernel-zero-tokio" }
-kernel-zero-ed25519 = { path = "kernel-zero-ed25519" }
-```
+- **Total crates**: 20 (9 main + 11 zero-dep)
+- **LOC**: ~30,000
+- **Edition**: Rust 2024
 
 ## Architecture
 
@@ -110,12 +61,6 @@ kernel-notify   # Notifications
 kernel-policy   # YAML policy
 ```
 
-## Pipeline Flow
-
-```
-Goal → Parse (kernel-llm) → Validate (kernel-policy) → Execute (kernel-exec) → Receipt (kernel-crypto) → Record (kernel-memory)
-```
-
 ## Policy Configuration
 
 Edit `policy.yaml`:
@@ -125,143 +70,60 @@ capabilities:
   - name: file_read
     allowed_paths:
       - /workspace/*
-  - name: file_write
-    allowed_paths:
-      - /workspace/*
 
 tools:
   - name: file_read
     capability: file_read
-  - name: file_write
-    capability: file_write
 ```
 
-## Zero-Dependency Modules
+## Zero-Dependency Options
 
-### kernel-zero
+### Feature Flags
 
-```rust
-use kernel_zero::time::now;
-use kernel_zero::id::random_id;
-use kernel_zero::sha256::Sha256;
-
-// Get current timestamp
-let ts = now();
-
-// Generate random ID
-let id = random_id();
-
-// Hash data
-let mut hasher = Sha256::new();
-hasher.update(b"data");
-let hash = hasher.finalize();
+```toml
+# Cargo.toml
+[features]
+default = ["use_std_deps"]  # Standard deps
+use_zero_dep = []           # Zero-dep alternatives
 ```
 
-### kernel-zero-serde
+### Available Zero-Dep Modules
 
-```rust
-use kernel_zero_serde::{Serialize, Deserialize, to_json, JsonSerializer};
+| Module | Replaces |
+|--------|----------|
+| kernel-zero | chrono, uuid, thiserror |
+| kernel-zero-serde | serde |
+| kernel-zero-json | serde_json |
+| kernel-zero-yaml | serde_yaml |
+| kernel-zero-tokio | tokio |
+| kernel-zero-dirs | dirs |
 
-// Define a serializable struct
-#[derive(Serialize, Deserialize)]
-struct Config {
-    name: String,
-    value: i32,
-}
-
-// Serialize to JSON
-let config = Config { name: "test".into(), value: 42 };
-let json = to_json(&config).unwrap();
-
-// Deserialize from JSON
-let parsed: Config = from_json(&json).unwrap();
-```
-
-### kernel-zero-tokio
-
-```rust
-use kernel_zero_tokio::{Runtime, spawn, block_on, sleep};
-
-// Create runtime
-let rt = Runtime::new();
-
-// Spawn a task
-let handle = rt.spawn(async {
-    sleep(Duration::from_millis(100)).await;
-    "done"
-});
-
-// Block on result
-let result = rt.block_on(async {
-    handle.await;
-    "completed"
-});
-```
-
-### kernel-zero-ed25519
-
-```rust
-use kernel_zero_ed25519::signing::{generate_keypair, sign, verify};
-
-// Generate keypair
-let kp = generate_keypair();
-
-// Sign message
-let message = b"Hello, World!";
-let signature = sign(message, &kp);
-
-// Verify
-let is_valid = verify(message, &signature, &kp.verifying_key);
-assert!(is_valid);
-```
+Enable: `cargo build --features use_zero_dep`
 
 ## Testing
 
 ```bash
-# Run all tests
+# Run tests
 cargo test
 
-# Run with zero-dep features
+# Run with zero-dep
 cargo test --features use_zero_dep
-
-# Run integration tests
-cargo test --test integration
 ```
+
+## Known Gaps (Honest)
+
+1. **Typed planning**: Still rule-based, not model-backed
+2. **WASM execution**: Runtime exists but not wired
+3. **Exception-only UX**: Some commands still print output
+4. **Daemon**: Basic Unix socket only
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| v0.1.4 | 2026-04-10 | Optional zero-dep wiring |
-| v1.3.0 | 2026-04-10 | Full lite serde + tokio |
-| v1.2.0 | 2026-04-10 | Lite implementations |
-| v1.1.0 | 2026-04-10 | Scaffolding |
-| v1.0.3 | 2026-04-10 | Honest assessment |
-
-## Crate Inventory
-
-- **Total crates**: 20 (9 main + 11 zero-dep)
-- **Zero-dep LOC**: ~25,000+
-- **Edition**: Rust 2024
-
-## FULL Zero-Dependency
-
-All external dependencies can be replaced:
-
-| Original | Replacement | Status |
-|----------|-------------|---------|
-| serde | kernel-zero-serde | ✅ |
-| serde_json | kernel-zero-json | ✅ |
-| serde_yaml | kernel-zero-yaml | ✅ |
-| tokio | kernel-zero-tokio | ✅ |
-| ed25519-dalek | kernel-zero-ed25519 | ✅ |
-| sha2 | kernel-zero::sha256 | ✅ |
-| uuid | kernel-zero::id | ✅ |
-| chrono | kernel-zero::time | ✅ |
-| thiserror | kernel-zero::error | ✅ |
-| dirs | kernel-zero-dirs | ✅ |
-
-Enable full zero-dep: `cargo build --features use_zero_dep`
+| Version | Date | Status |
+|---------|------|--------|
+| v0.1.6 | 2026-04-10 | Honest assessment |
+| v0.1.5 | 2026-04-10 | Zero-dep JSON/YAML |
+| v0.1.4 | 2026-04-10 | First zero-dep modules |
 
 ## License
 
