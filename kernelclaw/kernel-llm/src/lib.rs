@@ -1,5 +1,5 @@
-//! KernelClaw LLM - STRONGLY TYPED goal interpreter
-//! Returns parsed/validated struct, NOT raw string
+//! KernelClaw LLM - TYPED goal parser with validation
+//! Schema enforced, NOT just raw string
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -10,8 +10,8 @@ pub enum LlmError {
     Parse(String),
     #[error("Validation: {0}")]
     Validation(String),
-    #[error("Rejected: {0}")]
-    Rejected(String),
+    #[error("Network: {0}")]
+    Network(String),
 }
 
 /// STRUCTURED goal output - NOT just string
@@ -35,7 +35,7 @@ impl ParsedGoal {
     pub fn validate(&self) -> Result<(), LlmError> {
         // Check for rejection
         if self.task_id.to_lowercase() == "rejected" {
-            return Err(LlmError::Rejected(self.justification.clone()));
+            return Err(LlmError::Validation("Goal rejected".to_string()));
         }
         
         // Validate tool_name - MUST be in allowed list
@@ -57,32 +57,36 @@ impl ParsedGoal {
     }
 }
 
-/// LLM Client interface
+/// LLM Client - with wired parsing
 pub struct OllamaClient {
+    endpoint: String,
     model: String,
-    // endpoint would be used with real HTTP client
 }
 
 impl OllamaClient {
-    pub fn new(model: String) -> Self {
-        OllamaClient { model }
+    pub fn new(endpoint: String, model: String) -> Self {
+        OllamaClient { endpoint, model }
     }
     
-    /// Parse and validate goal - returns STRUCTURED output
+    /// Parse goal with STRUCTURED validation - NOT just raw string
     pub fn parse_goal(&self, goal: &str) -> Result<ParsedGoal, LlmError> {
-        // NOTE: In production, this calls Ollama with structured output
-        // For v0.1.3, we simulate the structure that would be parsed
+        // In production: call Ollama with structured output
+        // For v0.1.6: Use rule-based parsing
+        
+        let tool_name = self.infer_tool(goal);
+        let risk_level = self.infer_risk(goal);
+        
         let parsed = ParsedGoal {
             task_id: format!("goal_{}", uuid::Uuid::new_v4()),
-            tool_name: self.infer_tool(goal),
+            tool_name,
             parameters: serde_json::json!({ "input": goal }),
-            justification: "Auto-generated from goal text".to_string(),
-            risk_level: "low".to_string(),
+            justification: format!("Auto-parsed from: {}", goal),
+            risk_level,
             required_capabilities: vec!["file_read".to_string()],
             expected_output_type: "text".to_string(),
         };
         
-        // VALIDATE - REQUIRED
+        // VALIDATE - REQUIRED, NOT optional
         parsed.validate()?;
         
         Ok(parsed)
@@ -91,16 +95,30 @@ impl OllamaClient {
     /// Simple tool inference
     fn infer_tool(&self, goal: &str) -> String {
         let lower = goal.to_lowercase();
-        if lower.contains("read") || lower.contains("file") || lower.contains("list") {
+        if lower.contains("read") || lower.contains("file") {
             "file_read".to_string()
+        } else if lower.contains("list") || lower.contains("dir") {
+            "file_read_dir".to_string()
         } else if lower.contains("echo") || lower.contains("test") {
             "echo".to_string()
         } else {
-            "file_read".to_string() // default
+            "file_read".to_string()
+        }
+    }
+    
+    /// Simple risk inference
+    fn infer_risk(&self, goal: &str) -> String {
+        let lower = goal.to_lowercase();
+        if lower.contains("write") || lower.contains("delete") || lower.contains("sudo") {
+            "high".to_string()
+        } else if lower.contains("read") {
+            "low".to_string()
+        } else {
+            "medium".to_string()
         }
     }
     
     pub fn local() -> Self {
-        Self::new("llama3.2:3b".to_string())
+        Self::new("http://localhost:11434".to_string(), "llama3.2:3b".to_string())
     }
 }
