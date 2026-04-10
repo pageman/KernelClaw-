@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>KernelClaw Knowledge Graph Explorer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            margin: 0; 
+            background: #111; 
+            color: #0f0; 
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+        #container { width: 100vw; height: 100vh; }
+        #info { 
+            position: absolute; 
+            top: 10px; 
+            left: 10px; 
+            background: rgba(0,0,0,0.85); 
+            padding: 15px; 
+            border: 1px solid #0f0; 
+            max-width: 320px;
+            font-size: 12px;
+            z-index: 100;
+        }
+        #info h3 { color: #0f0; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        #info .prop { color: #ff0; }
+        #info .node-type { color: #888; font-size: 10px; }
+        #legend {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.85);
+            padding: 10px;
+            border: 1px solid #333;
+            font-size: 11px;
+        }
+        .legend-item { display: flex; align-items: center; margin: 3px 0; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+        #title {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="title">KernelClaw VSIK - Knowledge Graph</div>
+    <div id="container"></div>
+    <div id="info">
+        <h3>Node Info</h3>
+        <div id="node-details">Click a node for details</div>
+    </div>
+    <div id="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#ff0000"></div>Goal</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#00ff00"></div>Tool</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#0088ff"></div>Capability</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ffff00"></div>Skill</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ff8800"></div>Failure</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ff00ff"></div>Proposal</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#888800"></div>Success</div>
+    </div>
+
+    <!-- Three.js from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+
+    <script>
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        
+        const GRAPH_ENDPOINT = '/graph/export';  // Update this to your daemon endpoint
+        const NODE_COLORS = {
+            Goal: 0xff0000,
+            Tool: 0x00ff00,
+            Capability: 0x0088ff,
+            Path: 0x00ffff,
+            FailureType: 0xff8800,
+            Skill: 0xffff00,
+            UserWorkflow: 0x00ff88,
+            Proposal: 0xff00ff,
+            SuccessPattern: 0x888800
+        };
+        
+        // ============================================
+        // THREE.JS SETUP
+        // ============================================
+        
+        const container = document.getElementById('container');
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        
+        // Scene
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x111111);
+        
+        // Camera
+        const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 2000);
+        camera.position.z = 500;
+        
+        // Renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(width, height);
+        container.appendChild(renderer.domElement);
+        
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+        
+        // ============================================
+        // GRAPH DATA & LAYOUT
+        // ============================================
+        
+        let graphData = { nodes: [], edges: [] };
+        let nodeMeshes = [];
+        let edgeLines = [];
+        
+        // Simple force-directed layout (native JS)
+        function layoutGraph() {
+            const nodes = graphData.nodes;
+            const links = graphData.edges;
+            
+            // Initialize positions randomly
+            nodes.forEach((n, i) => {
+                n.x = (Math.random() - 0.5) * width;
+                n.y = (Math.random() - 0.5) * height;
+                n.vx = 0;
+                n.vy = 0;
+            });
+            
+            // Run simulation
+            for (let iter = 0; iter < 300; iter++) {
+                // Repulsion
+                for (let i = 0; i < nodes.length; i++) {
+                    for (let j = i + 1; j < nodes.length; j++) {
+                        const dx = nodes[j].x - nodes[i].x;
+                        const dy = nodes[j].y - nodes[i].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+                        const force = 50000 / (dist * dist);
+                        nodes[i].vx -= (dx/dist) * force;
+                        nodes[i].vy -= (dy/dist) * force;
+                        nodes[j].vx += (dx/dist) * force;
+                        nodes[j].vy += (dy/dist) * force;
+                    }
+                }
+                
+                // Attraction (edges)
+                links.forEach(link => {
+                    const si = nodes.findIndex(n => n.id === link.from);
+                    const ti = nodes.findIndex(n => n.id === link.to);
+                    if (si >= 0 && ti >= 0) {
+                        const dx = nodes[ti].x - nodes[si].x;
+                        const dy = nodes[ti].y - nodes[si].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+                        const force = (dist - 80) * 0.05;
+                        nodes[si].vx += (dx/dist) * force;
+                        nodes[si].vy += (dy/dist) * force;
+                        nodes[ti].vx -= (dx/dist) * force;
+                        nodes[ti].vy -= (dy/dist) * force;
+                    }
+                });
+                
+                // Center gravity
+                nodes.forEach(n => {
+                    n.vx -= n.x * 0.01;
+                    n.vy -= n.y * 0.01;
+                });
+                
+                // Velocity limit
+                nodes.forEach(n => {
+                    n.vx *= 0.9;
+                    n.vy *= 0.9;
+                    n.x += n.vx;
+                    n.y += n.vy;
+                });
+            }
+        }
+        
+        // ============================================
+        // RENDER NODES & EDGES
+        // ============================================
+        
+        function createScene() {
+            // Clear existing
+            nodeMeshes.forEach(m => scene.remove(m));
+            edgeLines.forEach(l => scene.remove(l));
+            nodeMeshes = [];
+            edgeLines = [];
+            
+            // Create nodes
+            graphData.nodes.forEach(node => {
+                const color = NODE_COLORS[node.node_type] || 0xaaaaaa;
+                const geometry = new THREE.SphereGeometry(8, 16, 16);
+                const material = new THREE.MeshBasicMaterial({ color });
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.set(node.x, node.y, 0);
+                mesh.userData = node;
+                scene.add(mesh);
+                nodeMeshes.push(mesh);
+                
+                // Highlight proposals
+                if (node.node_type === 'Proposal' && node.status === 'Pending') {
+                    const glow = new THREE.Mesh(
+                        new THREE.SphereGeometry(12, 16, 16),
+                        new THREE.MeshBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.3 })
+                    );
+                    glow.position.set(node.x, node.y, -1);
+                    scene.add(glow);
+                }
+            });
+            
+            // Create edges
+            graphData.edges.forEach(edge => {
+                const fromNode = graphData.nodes.find(n => n.id === edge.from);
+                const toNode = graphData.nodes.find(n => n.id === edge.to);
+                if (fromNode && toNode) {
+                    const points = [
+                        new THREE.Vector3(fromNode.x, fromNode.y, 0),
+                        new THREE.Vector3(toNode.x, toNode.y, 0)
+                    ];
+                    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                    const material = new THREE.LineBasicMaterial({ 
+                        color: edge.proposal ? 0xffff00 : 0x333333,
+                        transparent: true,
+                        opacity: edge.proposal ? 1 : 0.5
+                    });
+                    const line = new THREE.Line(geometry, material);
+                    scene.add(line);
+                    edgeLines.push(line);
+                }
+            });
+        }
+        
+        // ============================================
+        // INTERACTION (RAYCASTER)
+        // ============================================
+        
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        
+        container.addEventListener('click', (event) => {
+            mouse.x = (event.clientX / width) * 2 - 1;
+            mouse.y = -(event.clientY / height) * 2 + 1;
+            
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(nodeMeshes);
+            
+            if (intersects.length > 0) {
+                const node = intersects[0].object.userData;
+                showNodeInfo(node);
+            }
+        });
+        
+        function showNodeInfo(node) {
+            const details = document.getElementById('node-details');
+            let html = `<strong>${node.id}</strong><br>`;
+            html += `<span class="node-type">${node.node_type}</span><br><br>`;
+            html += `<em>${node.label}</em><br><br>`;
+            
+            if (node.metadata) {
+                Object.entries(node.metadata).forEach(([k, v]) => {
+                    html += `${k}: ${JSON.stringify(v)}<br>`;
+                });
+            }
+            
+            details.innerHTML = html;
+        }
+        
+        // ============================================
+        // MOUSE DRAG
+        // ============================================
+        
+        let isDragging = false;
+        let selectedNode = null;
+        
+        container.addEventListener('mousedown', (event) => {
+            mouse.x = (event.clientX / width) * 2 - 1;
+            mouse.y = -(event.clientY / height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(nodeMeshes);
+            if (intersects.length > 0) {
+                isDragging = true;
+                selectedNode = intersects[0].object;
+            }
+        });
+        
+        container.addEventListener('mousemove', (event) => {
+            if (isDragging && selectedNode) {
+                mouse.x = (event.clientX / width) * 2 - 1;
+                mouse.y = -(event.clientY / height) * 2 + 1;
+                selectedNode.position.x = mouse.x * width / 2;
+                selectedNode.position.y = -mouse.y * height / 2;
+                
+                // Update data
+                const node = graphData.nodes.find(n => n.id === selectedNode.userData.id);
+                if (node) {
+                    node.x = selectedNode.position.x;
+                    node.y = selectedNode.position.y;
+                }
+            }
+        });
+        
+        container.addEventListener('mouseup', () => { isDragging = false; selectedNode = null; });
+        
+        // ============================================
+        // ANIMATION LOOP
+        // ============================================
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+        
+        // ============================================
+        // LOAD GRAPH DATA
+        // ============================================
+        
+        async function loadGraph() {
+            try {
+                const response = await fetch(GRAPH_ENDPOINT);
+                graphData = await response.json();
+                
+                if (graphData.nodes && graphData.nodes.length > 0) {
+                    layoutGraph();
+                    createScene();
+                } else {
+                    // Demo data if empty
+                    graphData = demoGraph();
+                    layoutGraph();
+                    createScene();
+                }
+            } catch (e) {
+                console.log('Using demo graph:', e.message);
+                graphData = demoGraph();
+                layoutGraph();
+                createScene();
+            }
+        }
+        
+        function demoGraph() {
+            return {
+                nodes: [
+                    { id: 'tool_file_read', node_type: 'Tool', label: 'file_read', x: 0, y: 0 },
+                    { id: 'tool_email', node_type: 'Tool', label: 'email_summary', x: 100, y: 50 },
+                    { id: 'cap_readonly', node_type: 'Capability', label: 'readonly path', x: -100, y: 50 },
+                    { id: 'path_workspace', node_type: 'Path', label: '/workspace/*', x: -50, y: -100 },
+                    { id: 'failure_permission', node_type: 'FailureType', label: 'permission denied', x: 150, y: -50 },
+                    { id: 'skill_new', node_type: 'Skill', label: 'new_skill', x: 50, y: 150 },
+                    { id: 'proposal_1', node_type: 'Proposal', label: 'Add skill proposal', x: 200, y: 100, status: 'Pending' }
+                ],
+                edges: [
+                    { from: 'tool_file_read', to: 'cap_readonly', relation: 'requires' },
+                    { from: 'cap_readonly', to: 'path_workspace', relation: 'applies_to' },
+                    { from: 'failure_permission', to: 'tool_file_read', relation: 'caused_by' },
+                    { from: 'proposal_1', to: 'skill_new', relation: 'proposes', proposal: true }
+                ]
+            };
+        }
+        
+        // Start
+        loadGraph();
+        
+        // ============================================
+        // KEYBOARD CONTROLS
+        // ============================================
+        
+        document.addEventListener('keydown', (event) => {
+            switch(event.key) {
+                case 'r':
+                    camera.position.z = 500;
+                    break;
+                case '+':
+                case '=':
+                    camera.position.z *= 0.8;
+                    break;
+                case '-':
+                    camera.position.z *= 1.2;
+                    break;
+                case ' ':
+                    layoutGraph();
+                    createScene();
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>
