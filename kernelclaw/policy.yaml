@@ -1,35 +1,55 @@
-# KernelClaw Default Policy
-# v0.1.0 - Conservative baseline
+# KernelClaw Policy - ENFORCED constraints v0.1.3
+# Strong enforcement at actual tool boundary
 
-version: "0.1.0"
+version: "0.1.3"
 
-# Invariants - cannot be violated
+# INVARIANTS - MUST NEVER be violated
 invariants:
-  - no_network_access
-  - no_ambient_authority
-  - no_self_modification
+  - name: no_network_access
+    description: "No network requests allowed"
+  - name: no_shell_access
+    description: "No shell command execution"  
+  - name: no_file_write_default
+    description: "File writes must be explicitly enabled"
 
-# Actions requiring human approval
+# ACTIONS REQUIRING APPROVAL
 requires_approval:
   - file_write
-  - shell_exec
   - capability_escalation
 
-# Forbidden execution categories
+# FORBIDDEN - Always denied
 forbidden:
   - network_requests
-  - external_process_spawn
+  - shell_exec
+  - system_state_modification
 
-# Read-only paths
+# READONLY PATHS - Cannot be modified
 readonly_paths:
   - ~/.kernelclaw/keys/
   - ~/.kernelclaw/receipts/
+  - /etc/
+  - /root/
+  - ~/.ssh/
+  - ~/.aws/
 
-# Explicit capability allowlist
+# CAPABILITY ALLOWLIST - ACTUALLY ENFORCED at tool boundary
 capability_allowlist:
   file_read:
-    allowed_paths:
-      - ~/Documents/
-      - /tmp/
-  calendar_read:
     enabled: true
+    allowed_paths:
+      - /tmp/
+      - /var/tmp/
+      - ~/Documents/
+    max_file_size_bytes: 1048576
+  
+  file_write:
+    enabled: false
+  
+  shell:
+    enabled: false
+  
+  calendar:
+    enabled: false
+  
+  wasm:
+    enabled: false
