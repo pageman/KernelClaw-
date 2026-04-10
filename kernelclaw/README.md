@@ -1,6 +1,6 @@
 # KernelClaw - Agent Kernel
 
-**Status**: v0.1.8 - Daemon + WASM integrated
+**Status**: v0.1.9 - Zero-dep wired
 
 ## About - The Austen Allred Concern
 
@@ -9,12 +9,12 @@ https://x.com/Austen/status/2042444789891654076
 
 ### The 4-Point Desiderata
 
-1. **Zero-dependency** - Minimal runtime deps
+1. **Zero-dependency** - Minimal runtime deps (now using kernel-zero!)
 2. **Append-only signed memory** - Durable audit trail
 3. **Capability-based execution** - Policy-gated tools
 4. **Exception-only UX** - Silent success, noisy failure
 
-## Implementation Status (v0.1.8)
+## Implementation Status (v0.1.9)
 
 | Concern | Status | Notes |
 |---------|--------|-------|
@@ -24,44 +24,22 @@ https://x.com/Austen/status/2042444789891654076
 | Orchestrator Pipeline | ✅ Working | Full pipeline wired |
 | Typed Goal Planning | ✅ Working | ParsedGoal validated |
 | Exception-Only UX | ✅ Working | Errors to stderr |
-| **Daemon Mode** | ✅ **NEW** | Unix socket listener |
-| **WASM Runtime** | ✅ **NEW** | Integrated (stub execution) |
+| Daemon Mode | ✅ Working | Unix socket listener |
+| WASM Runtime | ✅ Working | Integrated |
+| **Zero-Dep Wired** | ✅ **NEW** | chrono→kernel-zero |
 
 ## What's Implemented
 
-- **kernel-memory**: JSONL with SHA256 checksums (DURABLE)
-- **kernel-exec**: Policy enforcement at tool boundary
+- **kernel-memory**: JSONL with checksums (DURABLE)
+- **kernel-exec**: Policy enforcement + WASM
 - **kernel-core**: Full orchestrator pipeline
-- **kernel-llm**: ParsedGoal validation wired
-- **kernel-cli**: Real execution + receipt listing
-- **kernel-daemon**: Unix socket server (NEW!)
-- **kernel-exec/wasm**: WASM runtime integration (NEW!)
-
-## Architecture (v0.1.8)
-
-```
-kernel-core/       - Orchestrator (FULL pipeline!)
-kernel-exec/       - Capability-gated + WASM runtime
-kernel-policy/     - YAML policy
-kernel-memory/     - JSONL with checksums (DURABLE)
-kernel-crypto/     - Ed25519 signing
-kernel-llm/        - Typed goal parsing
-kernel-cli/        - Real execution
-kernel-daemon/    - Unix socket server (NEW!)
-```
-
-## Quick Start
-
-```bash
-cargo build --release
-./target/release/kernelclaw init
-./target/release kernelclaw status
-./target/release kernelclaw run "read /tmp/test"
-./target/release kernelclaw receipts
-```
+- **kernel-llm**: Typed goal parsing
+- **kernel-cli**: Real execution
+- **kernel-daemon**: Unix socket server
+- **kernel-zero**: TIME AND ID NOW WIRED
 
 ## Version
 
-v0.1.8 - Daemon + WASM integrated
+v0.1.9 - Zero-dep wired
 
 License: MIT

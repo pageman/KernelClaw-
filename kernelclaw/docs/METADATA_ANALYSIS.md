@@ -1,4 +1,4 @@
-# KernelClaw - Metadata Analysis & Next Steps (v0.1.8)
+# KernelClaw - Metadata Analysis & Next Steps (v0.1.9)
 
 ## Repository Metadata
 
@@ -15,13 +15,54 @@
 kernel-cli/        - CLI entry point
 kernel-core/       - Orchestrator (FULL pipeline)
 kernel-crypto/     - Ed25519 signing/verification
-kernel-exec/       - Capability-gated executor + WASM runtime (NEW!)
+kernel-exec/       - Capability-gated executor + WASM
 kernel-llm/        - Typed goal parsing
 kernel-memory/     - JSONL with checksums (DURABLE)
 kernel-policy/     - YAML policy loading
 kernel-notify/     - Notifier
-kernel-daemon/     - Unix socket server (NEW!)
+kernel-daemon/     - Unix socket server
 ```
+
+### Zero-Dependency Wired (v0.1.9)
+| Replace | Module |
+|---------|--------|
+| chrono → | kernel_zero::time |
+| uuid → | kernel_zero::id |
+
+## Gap Analysis
+
+### ✅ All Major Gaps Fixed
+- Memory durability
+- Policy enforcement
+- Goal parsing
+- Orchestrator pipeline
+- Daemon mode
+- WASM runtime
+- Zero-dep wired (chrono, uuid)
+
+### Remaining (Minor)
+| Gap | Status | Notes |
+|-----|--------|-------|
+| WASM actual execution | Stub | Runtime integrated |
+| sha2 → kernel-zero | Not wired | Would save 1 dep |
+| thiserror → kernel-zero | Not wired | Would save 1 dep |
+
+## Recommended Next Steps (v0.1.9)
+
+### P0 - Done
+- Daemon mode ✅
+- WASM runtime ✅
+- Zero-dep wired (time/id) ✅
+
+### P1 - Remaining
+1. Wire sha2 → kernel_zero::sha256
+2. Wire thiserror → kernel_zero::error
+3. Wire ed25519-dalek → kernel-zero-ed25519
+4. Implement actual WASM execution
+
+## One-Line Summary
+
+> "v0.1.9 has all major features working; remaining is more zero-dep wiring."
 
 ### Zero-Dependency Modules (POC)
 ```

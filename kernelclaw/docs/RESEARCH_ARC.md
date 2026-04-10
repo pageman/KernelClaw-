@@ -1,31 +1,33 @@
-# KernelClaw - Research Journey (v0.1.8)
+# KernelClaw - Research Journey (v0.1.9)
 
 ## Problem Space
 
-KernelClaw emerged from Austen Allred's "Agent Desiderata": building trustworthy autonomous agents with core safety properties.
+KernelClaw emerged from Austen Allred's "Agent Desiderata": building trustworthy autonomous agents.
 
 ## Journey Log
 
-### v0.1.8 - Daemon + WASM (Current)
+### v0.1.9 - Zero-Dep Wired (Current)
 
-**NEW FEATURES IMPLEMENTED:**
+**NEW: Wire kernel-zero to main crates**
 
-| Feature | Implementation |
-|---------|----------------|
-| **Daemon Mode** | ✅ Unix socket server in `kernel-daemon/` |
-| **WASM Runtime** | ✅ Integrated into `kernel-exec/wasm_runtime.rs` |
+| Dependency | Replaced By |
+|------------|-------------|
+| chrono | kernel_zero::time |
+| uuid | kernel_zero::id |
 
-### Previous Fixes (v0.1.7)
-- Memory durability → JSONL with checksums
-- Policy enforcement → allowed_paths enforced at boundary
-- Goal parsing → ParsedGoal validation wired
-- Orchestrator → Full pipeline
+All 4 main crates now use zero-dep time/id functions!
 
-### v0.1.6 - Honest Assessment
-- Language was ahead of implementation
-- Critical gaps identified
+### v0.1.8 - Daemon + WASM
+- Daemon mode: Unix socket server
+- WASM runtime: Integrated
 
-## Current State (v0.1.8)
+### v0.1.7 - Full Pipeline Fix
+- Memory durability (JSONL)
+- Policy enforcement at boundary
+- Goal parsing wired
+- Full orchestrator
+
+## Current State (v0.1.9)
 
 ### Working
 - Ed25519 signing/verification
@@ -34,28 +36,19 @@ KernelClaw emerged from Austen Allred's "Agent Desiderata": building trustworthy
 - Policy enforced at tool boundary
 - Full orchestrator pipeline
 - CLI with real execution
-- Daemon mode with Unix socket
-- WASM runtime (stub execution)
+- Daemon mode (Unix socket)
+- WASM runtime (integrated)
+- **Zero-dep time/id WIRED**
 
 ### Remaining
-- WASM actual execution (stubbed, module not compiled)
-- Zero-dependency wired to main crates
-
-## Key Technical Achievements
-
-1. **Memory Durability**: JSONL with SHA256 checksums
-2. **Policy at Boundary**: file_read() enforces allowed_paths
-3. **Full Pipeline**: parse → validate → execute → receipt → record
-4. **Daemon**: Unix socket protocol
-5. **WASM Integration**: Runtime ready for tool registration
+- WASM actual execution (stubbed)
+- More zero-dep (sha2, thiserror)
 
 ## One Sentence Assessment
 
-> "KernelClaw v0.1.8 has working daemon mode, WASM runtime integration, and full orchestrator pipeline."
+> "KernelClaw v0.1.9 has kernel-zero wired into main crates, reducing external dependencies."
 
 ## References
 
 - Austen Allred: https://x.com/Austen
 - Original desiderata: https://x.com/Austen/status/2042444789891654076
-- RFC 8032 (Ed25519)
-- RFC 6234 (SHA-256)
