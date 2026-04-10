@@ -1,0 +1,8 @@
+[package]
+name = "kernel-zero"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# ZERO external dependencies!
+# All functionality is inline in this crate
