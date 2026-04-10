@@ -28,6 +28,8 @@ version = "0.1.5"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 
+# Include LICENSE file
+
 # Feature flags for zero-dependency modules
 [features]
 default = ["use_std_deps"]

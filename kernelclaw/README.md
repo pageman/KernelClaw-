@@ -128,3 +128,18 @@ cargo test --features use_zero_dep
 ## License
 
 MIT OR Apache-2.0
+
+## Citation
+
+If you use KernelClaw in your research, please cite:
+
+```
+@software{KernelClaw,
+  author = {Paul "The Pageman" Pajo},
+  title = {KernelClaw - Agent Kernel},
+  url = {https://github.com/pageman/KernelClaw-},
+  email = {pageman@gmail.com},
+  year = {2026},
+  version = {0.1.7}
+}
+```
