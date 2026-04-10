@@ -1,12 +1,12 @@
-# METADATA_ANALYSIS.md - KernelClaw v0.2.0 (VSIK)
+# METADATA_ANALYSIS.md - KernelClaw v0.2.1 (VSIK + Knowledge Graph)
 
 ## Repository Overview
 
 - **Repository**: pageman/KernelClaw-
-- **HEAD**: f236331 (v0.2.0 - VSIK MVP)
-- **Version**: 0.2.0
+- **HEAD**: 36c40b2 (v0.2.1)
+- **Version**: 0.2.1
 - **Edition**: 2024
-- **Status**: Verifiable Self-Improving Kernel MVP
+- **Status**: VSIK (Verifiable Self-Improving Kernel) with Knowledge Graph
 
 ## Crate Inventory
 
@@ -15,12 +15,12 @@
 | Crate | Purpose | Dependencies |
 |-------|---------|--------------|
 | kernel-cli | CLI + VSIK commands | tokio, dirs |
-| kernel-core | Orchestration + proposals | tokio, serde, serde_yaml |
+| kernel-core | Orchestration + proposals + graph | tokio, serde, serde_yaml |
 | kernel-crypto | Signing | thiserror |
 | kernel-daemon | Unix socket | dirs |
 | kernel-exec | Execution | tokio, serde, serde_json |
 | kernel-llm | Ollama client | tokio |
-| kernel-memory | JSONL ledger + proposals | kernel-zero |
+| kernel-memory | JSONL ledger | kernel-zero |
 | kernel-notify | Notifications | - |
 | kernel-policy | Policy engine | serde_yaml |
 
@@ -40,48 +40,74 @@
 | kernel-zero-derive | 250 | - | ✅ |
 | kernel-zero-serde-derive | 100 | - | ✅ |
 
-## Implementation Status (v0.2.0)
+### Tools
+
+| Directory | Purpose |
+|----------|---------|
+| tools/graph-viz.html | Three.js Knowledge Graph visualization |
+
+## Implementation Status (v0.2.1)
 
 | Concern | Status | Notes |
 |---------|--------|-------|
 | Append-Only Memory | ✅ Working | Real JSONL with checksums |
 | Policy at Tool Boundary | ✅ Working | allowed_paths enforced |
 | Orchestrator Pipeline | ✅ Working | Full pipeline with policy |
+| Self-Improvement (VSIK) | ✅ Working | Proposal → Review → Approve |
+| **Knowledge Graph** | ✅ NEW | Relational model + graph-aware proposals |
+| **Graph Visualization** | ✅ NEW | Three.js web UI |
 | Typed Planning | ⚠️ Heuristic | Rule-based inference |
 | Exception-Only UX | ⚠️ Partial | Some prints on success |
-| Daemon | ⚠️ Basic | Unix socket only |
-| WASM Runtime | ⚠️ Stub | Not wired |
 | Zero-Dependency | ⚠️ Optional | Feature flags available |
-| **Self-Improvement (VSIK)** | ✅ NEW | Proposal → Review → Approve → Apply |
 
-## VSIK (Verifiable Self-Improving Kernel)
+## VSIK + Knowledge Graph Features
 
-### New in v0.2.0
+### Knowledge Graph
 
-| Component | Status |
-|------------|--------|
-| ImprovementProposal struct | ✅ |
-| Distillation logic | ✅ |
-| Ledger Proposal type | ✅ |
-| CLI proposal commands | ✅ |
-| Policy activation | ✅ Proof-of-concept |
+```rust
+// Node types
+NodeType::Goal, Tool, Capability, Path, FailureType, Skill, 
+         UserWorkflow, Proposal, SuccessPattern
 
-### VSIK Flow
+// Graph operations
+graph.add_node(node);
+graph.add_edge(edge);
+graph.find_related(node_id);
+graph.find_connected_to_failure(failure_type);
 
-1. **Failure** → Orchestrator detects failure
-2. **Distillation** → `distill_and_propose()` generates proposal
-3. **Storage** → Proposal stored in ledger as `Proposal` variant
-4. **Review** → User runs `proposals list` / `proposals show`
-5. **Approval** → User runs `proposals approve <id>`
-6. **Activation** → Approved changes modify policy.yaml
+// Graph-aware proposal
+generate_graph_aware_proposal(failure_point, error, &graph);
+```
 
-### CLI Commands
+### VSIK Loop
+
+1. **Failure** → Orchestrator detects failure point
+2. **Distillation** → Graph-aware proposal with related nodes
+3. **Storage** → Signed proposal in ledger
+4. **Review** → `kernelclaw proposals list` / `show`
+5. **Approval** → `kernelclaw proposals approve <id>`
+6. **Activation** → Changes applied, activation receipt signed
+
+### Graph Visualization
+
+- Three.js force-directed layout
+- Color-coded nodes by type
+- Click for node details
+- Drag to reposition
+- Keyboard controls (r, +/-, space)
+- Proposal highlighting (yellow glow)
+
+## CLI Commands
 
 ```bash
-kernelclaw proposals list          # List all proposals
-kernelclaw proposals show <id> # Show proposal details
-kernelclaw proposals approve <id>  # Approve and apply
-kernelclaw proposals reject <id>   # Reject
+# Goal execution
+kernelclaw run "Write a hello world"
+
+# VSIK Proposals
+kernelclaw proposals list
+kernelclaw proposals show <id>
+kernelclaw proposals approve <id>
+kernelclaw proposals reject <id>
 ```
 
 ## External Dependencies
@@ -94,34 +120,18 @@ kernelclaw proposals reject <id>   # Reject
 | tokio | Optional | kernel-zero-tokio |
 | dirs | Optional | kernel-zero-dirs |
 
-## Honest Assessment
-
-### What's Working
-- Durable append-only memory (JSONL + checksums)
-- Policy enforcement at tool boundary
-- Full orchestration pipeline
-- Basic daemon
-- Ed25519 signing
-- **Self-improvement loop (VSIK)** ✅ NEW
-
-### What's Partial
-- Typed planning: Rule-based heuristic
-- WASM: Not wired in execution
-- Exception-only UX: Some prints
-- Zero-dep: Feature flags but not default
-
 ## GoT→CoT→PVL
 
 ### Goal of Task (GoT)
-- Implement VSIK (Verifiable Self-Improving Kernel)
-- Maintain zero-dep philosophy
-- Preserve audit trail
+- Full VSIK with knowledge graph
+- Zero-dep philosophy maintained
+- Visualization for review
 
 ### Course of Task (CoT)
-- v0.1.x: Zero-dep modules
+- v0.1.x: Zero-dep foundation
 - v0.1.6: Honest assessment
-- v0.2.0: VSIK MVP ✅
-- v0.2.1: Wire WASM execution
+- v0.2.0: VSIK MVP
+- v0.2.1: Knowledge Graph + visualization ✅
 
 ### PVL (Parallel Verification)
 
@@ -129,43 +139,45 @@ kernelclaw proposals reject <id>   # Reject
 |-------|--------|
 | Memory durable | ✅ |
 | Policy boundary | ✅ |
-| Daemon basic | ✅ |
-| Self-improvement | ✅ VSIK MVP |
-| VSIK proposals list | ✅ |
-| VSIK approve/reject | ✅ |
+| Graph model | ✅ |
+| VSIK proposals | ✅ |
+| Graph visualization | ✅ |
+| Zero-dep options | ✅ |
 
 ## Recommended Next Steps
 
 ### Priority 1
 1. Wire WASM execution in kernel-exec
 2. Make parse_goal use actual LLM
-3. True exception-only UX
+3. Add /graph/export daemon endpoint
 
 ### Priority 2
-4. Wire zero-dep as default
-5. Add integration tests for VSIK loop
+4. Add entity extraction after failures
+5. Wire zero-dep as default
+6. Add integration tests for VSIK loop
 
 ### Priority 3
-6. Enhanced daemon commands
-7. Better error messages
-
-## Metrics
-
-- **Total LOC**: ~32,000
-- **Zero-dep LOC**: ~25,000
-- **Crates**: 20
-- **VSIK**: MVP implemented
+7. Enhanced daemon commands
+8. Better error messages
 
 ## Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v0.2.1 | 2026-04-10 | Knowledge Graph + Three.js viz |
 | v0.2.0 | 2026-04-10 | VSIK MVP |
 | v0.1.7 | 2026-04-10 | MIT License |
 | v0.1.6 | 2026-04-10 | Honest assessment |
+
+## Metrics
+
+- **Total LOC**: ~35,000
+- **Zero-dep LOC**: ~25,000
+- **Crates**: 20
+- **Tools**: 1 (graph-viz.html)
 
 ## Critical Context
 
 - **Repo URL**: https://github.com/pageman/KernelClaw-
 - **Branch**: master
-- **Status**: VSIK MVP - verifiable self-improvement
+- **Status**: VSIK with Knowledge Graph - Verifiable Self-Improving Kernel
