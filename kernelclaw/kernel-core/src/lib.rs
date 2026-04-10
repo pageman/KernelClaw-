@@ -111,8 +111,9 @@ impl Orchestrator {
             }
             
             // Stage 3: EXECUTE - Through policy-gated executor (now uses policy!)
+            // FIXED: Use actual target path, not tool name!
             let exec_result = self.executor.execute(&kernel_exec::ExecRequest {
-                capabilities: vec![kernel_exec::Capability::FileRead(tool_name.clone())],
+                capabilities: vec![kernel_exec::Capability::FileRead(target_path.unwrap_or("").to_string())],
                 tool_name: tool_name.clone(),
                 params: parsed_goal.parameters.clone(),
             })?;
