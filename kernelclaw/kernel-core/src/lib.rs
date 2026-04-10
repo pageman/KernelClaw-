@@ -7,6 +7,8 @@ use kernel_memory::{MemoryLedger, EntryType};
 use kernel_crypto::{SigningKeyPair, create_receipt};
 use kernel_exec::Executor;
 use kernel_llm::{OllamaClient, ParsedGoal};
+use kernel_daemon::DaemonClient;
+use std::path::PathBuf;
 
 /// Goal status
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -32,6 +34,13 @@ pub struct ExecutionReceipt {
     pub timestamp: i64,
 }
 
+/// Execution mode
+#[derive(Debug, Clone)]
+pub enum ExecutionMode {
+    Direct,      // Direct execution (default)
+    Daemon(PathBuf),  // Via Unix socket daemon
+}
+
 /// Main orchestrator - FULL pipeline with POLICY
 pub struct Orchestrator {
     policy: Policy,
@@ -40,13 +49,14 @@ pub struct Orchestrator {
     keypair: Option<SigningKeyPair>,
     llm: Option<OllamaClient>,
     data_path: std::path::PathBuf,
+    execution_mode: ExecutionMode,
 }
 
 impl Orchestrator {
     /// Create with loaded policy - FIXED to use policy!
     pub fn new(policy_path: std::path::PathBuf, data_path: std::path::PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
         let policy = kernel_policy::load_policy(&policy_path)?;
-        let ledger = MemoryLedger::new(data_path);
+        let ledger = MemoryLedger::new(data_path.clone());
         
         // FIXED: Use executor WITH policy!
         let executor = Executor::with_policy(policy.clone());
@@ -58,6 +68,7 @@ impl Orchestrator {
             keypair: None,
             llm: None,
             data_path,
+            execution_mode: ExecutionMode::Direct,
         })
     }
     
@@ -75,6 +86,7 @@ impl Orchestrator {
             keypair: Some(keypair),
             llm: None,
             data_path: std::path::PathBuf::new(),
+            execution_mode: ExecutionMode::Direct,
         }
     }
     
@@ -171,5 +183,21 @@ impl Orchestrator {
     
     pub fn get_receipts(&self) -> Result<Vec<kernel_memory::LedgerEntry>, String> {
         self.ledger.get_all()
+    }
+    
+    /// Enable daemon mode for distributed execution
+    pub fn use_daemon(&mut self, socket_path: PathBuf) {
+        self.execution_mode = ExecutionMode::Daemon(socket_path);
+    }
+    
+    /// Execute via daemon if enabled, otherwise direct
+    fn execute_via_mode(&self, goal: &str) -> Result<String, String> {
+        match &self.execution_mode {
+            ExecutionMode::Direct => Ok(format!("direct: {}", goal)),
+            ExecutionMode::Daemon(socket) => {
+                let client = DaemonClient::new(socket.clone());
+                client.execute(goal)
+            }
+        }
     }
 }

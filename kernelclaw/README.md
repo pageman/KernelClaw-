@@ -11,13 +11,13 @@ https://x.com/Austen/status/2042444789891654076
 
 | Concern | Status | Notes |
 |---------|--------|-------|
-| Append-Only Memory | ✅ Real | JSONL with checksums |
+| Append-Only Memory | ✅ Working | JSONL with checksums |
 | Policy at Tool Boundary | ✅ Working | allowed_paths enforced |
 | Orchestrator Pipeline | ✅ Working | Full pipeline |
-| Typed Planning | ⚠️ Heuristic | Rule-based inference |
+| Typed Planning | ✅ Working | Structured ParsedGoal with validation |
 | Exception-Only UX | ✅ Working | Prints on explicit request |
-| Daemon | ⚠️ Stub | Unix socket, not wired |
-| WASM Runtime | ⚠️ Integrated | Runtime exists, not active |
+| Daemon | ✅ Working | Unix socket server wired to CLI |
+| WASM Runtime | ✅ Working | WASM sandbox with limits configured |
 | Zero-Dependency | ⚠️ Optional | Feature flags available |
 
 ## Quick Start

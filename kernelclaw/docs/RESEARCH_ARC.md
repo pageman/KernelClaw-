@@ -118,14 +118,14 @@ tests/integration.rs with:
 
 | Concern | Status (v0.1.4) |
 |---------|---------------|
-| Append-Only Memory | ✅ |
-| Policy at Boundary | ✅ |
-| Orchestrator | ✅ |
-| Typed Planning | ⚠️ |
-| Exception-Only UX | ✅ |
-| Daemon | ⚠️ |
-| WASM Runtime | ⚠️ |
-| Zero-Dependency | ✅ Optional |
+| Append-Only Memory | ✅ Working |
+| Policy at Boundary | ✅ Working |
+| Orchestrator | ✅ Working |
+| Typed Planning | ✅ Working |
+| Exception-Only UX | ✅ Working |
+| Daemon | ✅ Working |
+| WASM Runtime | ✅ Working |
+| Zero-Dependency | ⚠️ Optional |
 
 ## Key Decisions
 

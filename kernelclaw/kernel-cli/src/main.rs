@@ -82,8 +82,26 @@ fn main() -> ExitCode {
         }
         
         Some(Commands::Daemon) => {
-            eprintln!("[NOTIMPL] Daemon not implemented");
-            ExitCode::FAILURE
+            // Start daemon
+            let home = kernelclaw_home();
+            let socket_path = home.join("kernel.sock");
+            
+            let config = kernel_daemon::DaemonConfig {
+                socket_path: socket_path.clone(),
+                max_pending: 10,
+                timeout_ms: 30000,
+            };
+            
+            match kernel_daemon::start_daemon(config) {
+                Ok(_) => {
+                    println!("Daemon started on {:?}", socket_path);
+                    ExitCode::SUCCESS
+                }
+                Err(e) => {
+                    eprintln!("Failed to start daemon: {}", e);
+                    ExitCode::FAILURE
+                }
+            }
         }
         
         None => {
