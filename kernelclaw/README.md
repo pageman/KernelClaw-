@@ -1,6 +1,6 @@
 # KernelClaw - Agent Kernel
 
-**Status**: v0.1.6 - FULL Zero-Dependency Achievable
+**Status**: v0.1.6 - Honest Assessment
 
 ## About - The Austen Allred Concern
 
@@ -11,14 +11,14 @@ https://x.com/Austen/status/2042444789891654076
 
 | Concern | Status | Notes |
 |---------|--------|-------|
-| Append-Only Memory | ✅ Working | JSONL with checksums |
+| Append-Only Memory | ✅ Working | Real JSONL with checksums |
 | Policy at Tool Boundary | ✅ Working | allowed_paths enforced |
-| Orchestrator Pipeline | ✅ Working | Full pipeline |
-| Typed Planning | ✅ Working | Structured ParsedGoal with validation |
-| Exception-Only UX | ✅ Working | Prints on explicit request |
-| Daemon | ✅ Working | Unix socket server wired to CLI |
-| WASM Runtime | ✅ Working | WASM sandbox with limits configured |
-| Zero-Dependency | ✅ Working | All deps have zero-dep replacements |
+| Orchestrator Pipeline | ✅ Working | Full pipeline with policy |
+| Typed Planning | ⚠️ Heuristic | Rule-based inference |
+| Exception-Only UX | ⚠️ Partial | Some commands print on success |
+| Daemon | ⚠️ Basic | Unix socket, limited |
+| WASM Runtime | ⚠️ Stub | Runtime integrated, not wired |
+| Zero-Dependency | ⚠️ Optional | Feature flags available |
 
 ## Quick Start
 
