@@ -1,4 +1,4 @@
-# KernelClaw - Metadata Analysis & Next Steps (v0.1.7)
+# KernelClaw - Metadata Analysis & Next Steps (v0.1.8)
 
 ## Repository Metadata
 
@@ -6,20 +6,21 @@
 
 | Category | Crates | Total LOC |
 |----------|--------|-----------|
-| **Main** | 8 | 1,443 |
+| **Main** | 9 | ~1,600 |
 | **Zero-Dep POC** | 6 | 2,418 |
-| **Total** | 14 | 3,861 |
+| **Total** | 15 | ~4,000+ |
 
 ### Main Crates (Production)
 ```
-kernel-cli/      - 150 LOC  - CLI entry point
-kernel-core/     - 161 LOC  - Orchestrator (FULL pipeline)
-kernel-crypto/   - 113 LOC  - Ed25519 signing/verification
-kernel-exec/     - 406 LOC  - Capability-gated executor
-kernel-llm/      - 123 LOC  - Typed goal parsing
-kernel-memory/   - 162 LOC  - JSONL with checksums
-kernel-policy/   - 178 LOC  - YAML policy loading
-kernel-notify/   - ?        - Not surveyed
+kernel-cli/        - CLI entry point
+kernel-core/       - Orchestrator (FULL pipeline)
+kernel-crypto/     - Ed25519 signing/verification
+kernel-exec/       - Capability-gated executor + WASM runtime (NEW!)
+kernel-llm/        - Typed goal parsing
+kernel-memory/     - JSONL with checksums (DURABLE)
+kernel-policy/     - YAML policy loading
+kernel-notify/     - Notifier
+kernel-daemon/     - Unix socket server (NEW!)
 ```
 
 ### Zero-Dependency Modules (POC)
