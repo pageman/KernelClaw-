@@ -17,10 +17,10 @@ https://x.com/Austen/status/2042444789891654076
 | Policy at Tool Boundary | ✅ Working | allowed_paths enforced |
 | Orchestrator Pipeline | ✅ Working | Full pipeline with policy |
 | Self-Improvement (VSIK) | ✅ Working | Proposal → Review → Approve |
-| **Knowledge Graph** | ✅ NEW | Relational model + graph-aware proposals |
-| **Graph Visualization** | ✅ NEW | Three.js web UI |
+| Knowledge Graph | ✅ Working | Relational model + graph-aware proposals |
+| Graph Visualization | ⚠️ CDN | Three.js from cdnjs (optional tool) |
 | Typed Planning | ⚠️ Heuristic | Rule-based inference |
-| Zero-Dependency | ⚠️ Optional | Feature flags available |
+| Zero-Dependency | ✅ Core | All Rust deps have zero-dep alternatives |
 
 ## Quick Start
 
@@ -107,6 +107,8 @@ let connections = graph.find_connected_to_failure("permission_denied");
 
 Open `tools/graph-viz.html` in a browser to see your knowledge graph:
 
+**Note**: The visualization uses Three.js from CDN (cdnjs.cloudflare.com). This is an optional tool, not part of the core kernel. The core kernel has zero external Rust dependencies when using `--features use_zero_dep`.
+
 ```
 # In browser
 open tools/graph-viz.html
@@ -133,18 +135,19 @@ kernel-notify   # Notifications
 kernel-policy   # YAML policy
 ```
 
-## Zero-Dependency Modules (11)
+## Zero-Dependency
 
-| Module | Replaces |
-|--------|----------|
-| kernel-zero | chrono, uuid, thiserror |
-| kernel-zero-serde | serde |
-| kernel-zero-json | serde_json |
-| kernel-zero-yaml | serde_yaml |
-| kernel-zero-tokio | tokio |
-| kernel-zero-dirs | dirs |
+**Core kernel (Rust)**: Full zero-dep achievable via `--features use_zero_dep`
 
-Enable: `cargo build --features use_zero_dep`
+| Dependency | Replacement |
+|------------|-------------|
+| serde | kernel-zero-serde |
+| serde_json | kernel-zero-json |
+| serde_yaml | kernel-zero-yaml |
+| tokio | kernel-zero-tokio |
+| dirs | kernel-zero-dirs |
+
+**Note**: The optional visualization tool (tools/graph-viz.html) uses Three.js from CDN. This is NOT part of the core kernel.
 
 ## Dependencies
 

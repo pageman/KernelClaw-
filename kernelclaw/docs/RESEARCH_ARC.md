@@ -1,96 +1,57 @@
 # RESEARCH_ARC.md - KernelClaw Research Journey
 
-## v0.2.1 (2026-04-10 22:54) - VSIK + Knowledge Graph Complete
+## v0.2.1 (2026-04-10 23:04) - Honest Assessment
 
-### Major Additions
+### External Dependencies Analysis
 
-- **Knowledge Graph module** (`kernel-core/graph.rs`)
-  - Node, Edge, GraphPatch types
-  - KnowledgeGraph with HashMap backend
-  - find_related(), find_connected_to_failure()
-  - generate_graph_aware_proposal()
+#### Rust Dependencies (in Cargo.toml)
+All 10 Rust dependencies are optional with zero-dep replacements:
+- serde → kernel-zero-serde
+- serde_json → kernel-zero-json
+- serde_yaml → kernel-zero-yaml
+- tokio → kernel-zero-tokio
+- ed25519-dalek → kernel-zero-ed25519
+- sha2 → kernel-zero
+- uuid → kernel-zero
+- chrono → kernel-zero
+- thiserror → kernel-zero
+- dirs → kernel-zero-dirs
 
-- **Three.js Visualization** (`tools/graph-viz.html`)
-  - Force-directed layout
-  - Color-coded nodes by type
-  - Interactive (click, drag)
-  - Keyboard controls
+#### CDN Dependencies (NOT in Cargo.toml)
+| Resource | File | Status |
+|----------|------|---------|
+| Three.js | tools/graph-viz.html | CDN only |
 
-### VSIK + Knowledge Graph Flow
-
-1. **Failure** → Orchestrator detects failure point
-2. **Graph Extraction** → Find related nodes in knowledge graph
-3. **Graph Patch** → Generate subgraph (3-10 nodes/edges)
-4. **Proposal** → Wrap in ImprovementProposal, sign
-5. **Review** → User reviews via CLI or visualization
-6. **Approval** → Merge into graph, apply changes
-
-## Zero-Dependency Modules (11 Total)
-
-| Module | Status |
-|--------|--------|
-| kernel-zero | ✅ |
-| kernel-zero-ed25519 | ✅ |
-| kernel-zero-serde | ✅ |
-| kernel-zero-tokio | ✅ |
-| kernel-zero-json | ✅ |
-| kernel-zero-yaml | ✅ |
-| kernel-zero-dirs | ✅ |
-| kernel-zero-runtime | ⚠️ Stub |
-| kernel-zero-async | ✅ |
-| kernel-zero-derive | ✅ |
-| kernel-zero-serde-derive | ✅ |
+Note: Three.js is used ONLY in optional visualization, NOT in core kernel.
 
 ## GoT→CoT→PVL Pipeline
 
 ### GoT (Goal of Task)
-Verifiable Self-Improving Kernel with relational knowledge
+- Full zero-dependency kernel
+- VSIK with Knowledge Graph
+- Honest about remaining gaps
 
 ### CoT (Course of Task)
-- v0.1.x: Zero-dep foundation
-- v0.1.6: Honest assessment
-- v0.2.0: VSIK MVP
-- v0.2.1: Knowledge Graph + visualization ✅
+- v0.1.x: Zero-dep foundation ✅
+- v0.2.0: VSIK MVP ✅
+- v0.2.1: Knowledge Graph + Viz ⚠️ CDN
 
 ### PVL (Verification)
 
 | Check | Status |
 |-------|--------|
-| Memory durable | ✅ |
-| Policy boundary | ✅ |
-| Graph model | ✅ |
-| VSIK proposals | ✅ |
-| Graph visualization | ✅ |
-
-## Version History
-
-- v0.2.1 (36c40b2): Knowledge Graph + Three.js
-- v0.2.0 (7531cbe): VSIK MVP
-- v0.2.0 (0d28f62): Super-exhaustive metadata
-- v0.1.7 (9b0bfa0): MIT License
-- v0.1.6 (afc66f1): Honest assessment
+| Rust zero-dep | ✅ All optional |
+| VSIK loop | ✅ Working |
+| Knowledge Graph | ✅ Working |
+| Visualization | ⚠️ CDN |
 
 ## Honest Verdict
 
-"VSIK with Knowledge Graph - verifiable self-improvement with relational model and visualization."
-
-## Key Milestones
-
-1. ✅ Append-only JSONL memory with checksums
-2. ✅ Policy enforcement at tool boundary
-3. ✅ VSIK loop (proposal → review → approve)
-4. ✅ Knowledge Graph with relational model
-5. ✅ Three.js visualization for graph exploration
-6. ✅ Zero-dep alternatives available
-
-## Remaining Work
-
-- Wire WASM execution
-- Make typed planning model-backed
-- Add daemon /graph/export endpoint
+- **Core kernel**: Full zero-dep achievable
+- **Visualization**: Uses Three.js from CDN (not zero-dep, but optional tool)
 
 ## Critical Context
 
 - **Repository**: pageman/KernelClaw-
-- **HEAD**: 36c40b2
-- **Edition**: Rust 2024
+- **HEAD**: 931c1aa
+- **Status**: VSIK + Knowledge Graph with honest gap assessment
