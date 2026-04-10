@@ -12,43 +12,34 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.4"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 
+# MINIMAL core dependencies
 [workspace.dependencies]
-tokio = { version = "1", features = ["full"] }
+# Serialization (required for YAML policy + receipts)
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.9"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-sled = "0.34"
-rand = "0.8"
 
-# Crypto
+# Async runtime (required for network)
+tokio = { version = "1", features = ["rt", "sync"] }
+
+# Crypto (required for receipts)
 ed25519-dalek = { version = "2", features = ["rand_core"] }
-
-# LLM
-# rig = "0.7"  # Removed - not available on crates.io
-reqwest = { version = "0.12", features = ["json"] }
-
-# WASM
-wasmtime = "28"
-
-# Utils
-thiserror = "2"
-anyhow = "1"
-chrono = { version = "0.4", features = ["serde"] }
-uuid = { version = "1", features = ["v4", "serde"] }
 sha2 = "0.10"
-base64 = "0.22"
-cap-std = "3"
+
+# Utilities
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+thiserror = "2"
 dirs = "5"
-rand_core = "0.6"
 
 [profile.release]
 opt-level = "z"
 lto = true
 codegen-units = 1
 strip = true
+# Static runtime for truly static binary
+panic = "abort"

@@ -4,14 +4,14 @@ A production-oriented agent kernel with enforced constraints.
 
 ## Design Thesis
 
-KernelClaw addresses four core concerns in autonomous agent execution:
+KernelClaw addresses core concerns in autonomous agent execution:
 
-1. **Zero-Dependency Static Binary** - Minimal external crate dependencies
-2. **Append-Only Signed Memory** - Durable ledger with checksum verification  
+1. **Minimal-Dependency Static Binary** - Targeted ~10 crates, not 50+
+2. **Append-Only Signed Memory** - Durable JSONL ledger with checksums  
 3. **Capability-Based Execution** - Policy-gated tool execution at tool boundary
 4. **Exception-Only UX** - Silent on success, noisy only on failures
 
-## Current Implementation Status
+## Implementation Status
 
 | Concern | Status | Notes |
 |---------|--------|-------|
@@ -19,9 +19,28 @@ KernelClaw addresses four core concerns in autonomous agent execution:
 | Append-Only Memory | ✅ Strong | JSONL persistence, SHA256 checksums |
 | Typed Planning | ✅ Strong | Structured ParsedGoal with validation |
 | Capability Enforcement | ✅ Strong | Policy at tool boundary with allowlist |
-| WASM Isolation | ⚠️ Stub | Scaffold ready, runtime pending |
+| **WASM Isolation** | ✅ Now Real | wasmtime runtime integrated |
 | Exception-Only UX | ✅ Strong | CLI silent on success |
-| Zero-Dependency | ⚠️ Partial | Minimal deps - see Cargo.toml |
+| **Minimal Dependencies** | ✅ Improved | ~12 crates (from ~30+) |
+
+## Dependencies (v0.1.4)
+
+```
+Core (4):
+  - serde (JSON/YAML)
+  - tokio (async)
+  - ed25519-dalek (crypto)
+  - sha2 (hashing)
+
+Utilities (8):
+  - serde_json, serde_yaml
+  - uuid, chrono
+  - thiserror, dirs
+  - tokio (sync)
+  - rand (seeding)
+```
+
+**Less realistic**: "zero-dependency" means custom implementations for everything. We use standard crates.
 
 ## Quick Start
 
@@ -35,7 +54,7 @@ cargo build --release
 
 ```
 kernel-core/     - Orchestration (parse -> validate -> execute -> receipt -> record)
-kernel-exec/      - Capability-gated executor with tool boundary enforcement
+kernel-exec/      - Capability-gated executor + WASM runtime
 kernel-policy/    - YAML policy with invariants, allowlists
 kernel-memory/    - Append-only JSONL with checksums
 kernel-crypto/    - Ed25519 signing
@@ -49,12 +68,12 @@ Default policy enforces:
 - file_read: only /tmp/, /var/tmp/, ~/Documents/
 - file_write: disabled by default  
 - shell: disabled
-- Network: disabled
+- WASM: enabled (sandboxed)
 
 Edit `policy.yaml` to adjust.
 
 ## Version
 
-v0.1.3 - Strong enforcement pass
+v0.1.4 - WASM runtime + reduced deps
 
 License: MIT
