@@ -1,0 +1,7 @@
+[package]
+name = "kernel-zero-ed25519"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# ZERO external dependencies!
