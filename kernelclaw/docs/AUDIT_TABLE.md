@@ -1,73 +1,44 @@
-# KernelClaw - Strict Audit Table
+# KernelClaw - Strict Audit Table (v0.1.7)
 
-## v0.1.6 - Claim vs Reality vs Priority
+## Claim vs Reality (UPDATED)
 
 | Claim in README/About | Current Evidence | Verdict | Priority |
 |-----------------------|------------------|---------|----------|
-| **Zero-dependency static binary** | 30+ crates in Cargo.toml | ❌ FALSE | LOW |
-| **Append-only signed memory** | Mutex<Vec<LedgerEntry>> in-memory | ❌ FALSE | HIGH |
-| **Append-only sled database** | No sled usage in kernel-memory | ❌ FALSE | HIGH |
-| **Capability-based execution** | Native dispatch, no sandbox | ❌ FALSE | HIGH |
-| **Policy enforced at tool boundary** | file_read doesn't check allowed_paths | ❌ FALSE | HIGH |
-| **WASM sandbox isolation** | wasmtime not in executor path | ❌ FALSE | MEDIUM |
-| **Typed goal interpreter** | Schema defined, not wired to orchestration | ❌ FALSE | HIGH |
-| **Exception-only UX** | CLI prints "[STUB]" on happy path | ⚠️ PARTIAL | MEDIUM |
-| **Full orchestrator pipeline** | Just creates receipts, no real execution | ❌ FALSE | HIGH |
-| **Daemon mode implemented** | CLI says "[NOTIMPL]" | ❌ FALSE | MEDIUM |
-| Ed25519 signing/verification | Full implementation in kernel-crypto | ✅ REAL | - |
-| Policy YAML loading | Working in kernel-policy | ✅ REAL | - |
-| CLI exception-only (errors) | Errors to stderr | ✅ REAL | - |
+| **Zero-dependency** | Standard crates | ⚠️ PARTIAL | LOW |
+| **Append-only memory** | JSONL with SHA256 | ✅ FIXED | DONE |
+| **Capability execution** | Native dispatch + policy | ✅ FIXED | DONE |
+| **Policy at tool boundary** | file_read() checks allowed_paths | ✅ FIXED | DONE |
+| **WASM sandbox** | Not in active path | ❌ STUB | MEDIUM |
+| **Typed goal interpreter** | ParsedGoal wired to orchestrator | ✅ FIXED | DONE |
+| **Exception-only UX** | CLI errors to stderr | ✅ WORKING | DONE |
+| **Full orchestrator** | parse→validate→execute→receipt→record | ✅ FIXED | DONE |
+| **Ed25519 signing** | Full implementation | ✅ REAL | - |
+| **Policy loading** | YAML→in-memory | ✅ REAL | - |
+
+## v0.1.7 Changes
+
+| Gap | Was | Now |
+|-----|-----|-----|
+| Memory durability | In-memory Mutex | **JSONL with checksums** |
+| Policy enforcement | Not at boundary | **Enforced in file_read()** |
+| Goal parsing | Schema unused | **ParsedGoal wired** |
+| Orchestrator | Just receipts | **Full pipeline** |
+| CLI Run | Stubbed | **Real execution** |
+| CLI Receipts | Stubbed | **Lists from ledger** |
+
+## Remaining Gaps (v0.1.7)
+
+| Gap | Status | Notes |
+|-----|--------|-------|
+| WASM sandbox | Not active | Runtime not integrated |
+| Daemon mode | Not implemented | Socket listener stub |
+
+## One Sentence Assessment (v0.1.7)
+
+> "KernelClaw now has working implementations for most core concerns after v0.1.7 pipeline fixes."
 
 ---
 
-## Gaps Ranked by Priority
-
-### P0 - Must Fix (Breaks Trust)
-
-| Gap | Evidence | Fix |
-|-----|-----------|-----|
-| **Memory not durable** | `entries: Mutex<Vec<>>` | Add JSONL persistence |
-| **Policy not enforced** | file_read doesn't check allowed_paths | Wire ToolPolicy to file_read |
-| **Goal not parsed** | LLM returns raw string | Wire ParsedGoal to orchestration |
-| **No real execution** | execute_goal() just creates receipt | Full pipeline implementation |
-
-### P1 - Should Fix (Breaking Claims)
-
-| Gap | Evidence | Fix |
-|-----|-----------|-----|
-| **WASM not active** | wasmtime in Cargo.toml but unused | Add wasm path or remove claim |
-| **Policy docs overclaim** | "ENFORCED" in YAML but not enforced | Update YAML language |
-| **README overclaim** | "Strong" status markers | Fix to "Partial" or "Stub" |
-
-### P2 - Nice to Have
-
-| Gap | Evidence | Fix |
-|-----|-----------|-----|
-| **Zero-dependency** | 30+ crates | Use kernel-zero-* modules or update claim |
-| **Daemon not implemented** | CLI marker | Implement or remove command |
-| **Receipt listing** | CLI marker | Implement |
-
----
-
-## Honest Summary
-
-**Working**: Crypto signing, Policy loading, CLI error handling
-**Stubbed**: Goal execution, Daemon, Receipt listing
-**Missing**: Memory durability, Policy enforcement at boundary, Real pipeline
-
-### One Sentence Assessment
-
-> "KernelClaw is currently a persuasive repo-shaped argument for Austen's kernel, not yet Austen's kernel proven in code."
-
----
-
-## Recommended Next Steps (Priority Order)
-
-1. **WIRE UP kernel-zero-time** - Replace chrono dep
-2. **Add JSONL persistence** - Fix memory gap  
-3. **Wire ToolPolicy to file_read()** - Fix policy gap
-4. **Wire ParsedGoal to execute_goal()** - Fix goal gap
-5. **Full pipeline in orchestrator** - Fix execution gap
-6. **Update all claims in README** - Match reality
-
-After P0 fixes: Re-audit and update README claims.
+**Next Steps**: 
+- Add WASM runtime to active path
+- Implement daemon mode
