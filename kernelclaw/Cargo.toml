@@ -1,8 +1,16 @@
 [workspace]
 resolver = "2"
 members = [
+    "kernel-zero-json",
+    "kernel-zero-yaml",
     "kernel-zero-tokio",
     "kernel-zero-serde-derive",
+    "kernel-zero",
+    "kernel-zero-ed25519",
+    "kernel-zero-async",
+    "kernel-zero-derive",
+    "kernel-zero-runtime",
+    "kernel-zero-serde",
     "kernel-daemon",
     "kernel-core",
     "kernel-memory", 
@@ -15,31 +23,24 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.4"
+version = "0.1.5"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 
 # Feature flags for zero-dependency modules
 [features]
 default = ["use_std_deps"]
-use_std_deps = []  # Use standard dependencies (default)
-use_zero_dep = ["kernel-zero-serde", "kernel-zero-tokio", "kernel-zero-ed25519"]
+use_std_deps = []
+use_zero_dep = ["kernel-zero-serde", "kernel-zero-json", "kernel-zero-yaml", "kernel-zero-tokio", "kernel-zero-ed25519"]
 
 # MINIMAL core dependencies
 [workspace.dependencies]
-# Serialization (required for YAML policy + receipts)
 serde = { version = "1", features = ["derive"], optional = true }
 serde_json = "1"
 serde_yaml = "0.9"
-
-# Async runtime (required for network)
 tokio = { version = "1", features = ["rt", "sync"], optional = true }
-
-# Crypto (required for receipts)
 ed25519-dalek = { version = "2", features = ["rand_core"], optional = true }
 sha2 = "0.10"
-
-# Utilities
 uuid = { version = "1", features = ["v4"], optional = true }
 chrono = { version = "0.4", features = ["serde"], optional = true }
 thiserror = { version = "2", optional = true }
@@ -48,6 +49,8 @@ dirs = "5"
 # Zero-dependency alternatives
 kernel-zero = { path = "kernel-zero" }
 kernel-zero-serde = { path = "kernel-zero-serde", optional = true }
+kernel-zero-json = { path = "kernel-zero-json", optional = true }
+kernel-zero-yaml = { path = "kernel-zero-yaml", optional = true }
 kernel-zero-tokio = { path = "kernel-zero-tokio", optional = true }
 kernel-zero-ed25519 = { path = "kernel-zero-ed25519", optional = true }
 
@@ -56,5 +59,4 @@ opt-level = "z"
 lto = true
 codegen-units = 1
 strip = true
-# Static runtime for truly static binary
 panic = "abort"

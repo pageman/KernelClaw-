@@ -65,6 +65,8 @@ Available zero-dep modules:
 | kernel-zero-ed25519 | ed25519-dalek | ~500 |
 | kernel-zero-serde | serde | ~700 |
 | kernel-zero-tokio | tokio | ~700 |
+| kernel-zero-json | serde_json | ~10KB |
+| kernel-zero-yaml | serde_yaml | ~5KB |
 
 ### Enabling Zero-Dependency
 
@@ -72,11 +74,19 @@ Available zero-dep modules:
 # In your Cargo.toml
 [features]
 default = []
-use_zero_dep = ["kernel-zero-serde", "kernel-zero-tokio", "kernel-zero-ed25519"]
+use_zero_dep = [
+    "kernel-zero-serde",
+    "kernel-zero-json", 
+    "kernel-zero-yaml",
+    "kernel-zero-tokio", 
+    "kernel-zero-ed25519",
+]
 
 [dependencies]
 kernel-zero = { path = "kernel-zero" }
 kernel-zero-serde = { path = "kernel-zero-serde" }
+kernel-zero-json = { path = "kernel-zero-json" }
+kernel-zero-yaml = { path = "kernel-zero-yaml" }
 kernel-zero-tokio = { path = "kernel-zero-tokio" }
 kernel-zero-ed25519 = { path = "kernel-zero-ed25519" }
 ```

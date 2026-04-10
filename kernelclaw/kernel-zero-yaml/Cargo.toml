@@ -1,0 +1,8 @@
+[package]
+name = "kernel-zero-yaml"
+version = "0.1.0"
+edition = "2021"
+description = "YAML parsing (scaffold version)"
+
+[dependencies]
+# ZERO external deps!
