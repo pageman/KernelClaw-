@@ -9,19 +9,6 @@
 KernelClaw is an attempt to implement the agent kernel from:
 https://x.com/Austen/status/2042444789891654076
 
-## Implementation Status (v0.2.1)
-
-| Concern | Status | Notes |
-|---------|--------|-------|
-| Append-Only Memory | ✅ Working | Real JSONL with checksums |
-| Policy at Tool Boundary | ✅ Working | allowed_paths enforced |
-| Orchestrator Pipeline | ✅ Working | Full pipeline with policy |
-| Self-Improvement (VSIK) | ✅ Working | Proposal → Review → Approve |
-| Knowledge Graph | ✅ Working | Relational model + graph-aware proposals |
-| Graph Visualization | ⚠️ CDN | Three.js from cdnjs (optional tool) |
-| Typed Planning | ⚠️ Heuristic | Rule-based inference |
-| Zero-Dependency | ✅ Core | All Rust deps have zero-dep alternatives |
-
 ## Quick Start
 
 ```bash
@@ -31,14 +18,87 @@ cargo build
 # Initialize
 cargo run -- init
 
+# Check status
+cargo run -- status
+
 # Run a goal
 cargo run -- run "Write a hello world program"
 
 # List receipts
 cargo run -- receipts
+```
 
-# VSIK: List proposals
+## Implementation Status (v0.2.1)
+
+| Concern | Status | Notes |
+|---------|--------|-------|
+| Append-Only Memory | ✅ Working | Real JSONL with SHA256 checksums |
+| Policy at Tool Boundary | ✅ Working | allowed_paths enforced |
+| Orchestrator Pipeline | ✅ Working | Full pipeline with policy |
+| Self-Improvement (VSIK) | ✅ Working | Proposal → Review → Approve |
+| Knowledge Graph | ✅ Working | Relational model + graph-aware proposals |
+| Graph Visualization | ⚠️ CDN | Three.js from cdnjs (optional) |
+| Zero-Dependency | ✅ Core | All Rust deps have alternatives |
+
+## Architecture
+
+```
+┌─────────────────────────────────────┐
+│           kernel-cli               │
+│   (init, run, status, proposals)   │
+└──────┬──────────┬────────────┬──────┘
+       │          │            │
+       ▼          ▼            ▼
+   kernel-   kernel-    kernel-llm
+    core     exec        (parsing)
+       │          │            
+       ▼          ▼            
+   kernel-   kernel-    kernel-  
+   policy   memory      daemon
+       │          │            │
+       ▼          ▼            ▼
+   ┌─────────────────────────────────┐
+   │    Zero-Dep Modules (11)        │
+   │ kernel-zero, kernel-zero-*, etc│
+   └─────────────────────────────────┘
+```
+
+## CLI Commands
+
+### Basic Operations
+```bash
+# Initialize kernel
+cargo run -- init
+
+# Run a goal
+cargo run -- run "Your goal here"
+
+# Check system status
+cargo run -- status
+
+# List receipts
+cargo run -- receipts
+```
+
+### VSIK Commands
+```bash
+# List improvement proposals
 cargo run -- proposals list
+
+# Show proposal details
+cargo run -- proposals show <proposal_id>
+
+# Approve and apply proposal
+cargo run -- proposals approve <proposal_id>
+
+# Reject proposal
+cargo run -- proposals reject <proposal_id>
+```
+
+### Daemon
+```bash
+# Start daemon
+cargo run -- daemon
 ```
 
 ## VSIK - Verifiable Self-Improving Kernel
@@ -52,26 +112,23 @@ cargo run -- proposals list
 5. **Approval** → `kernelclaw proposals approve <id>`
 6. **Activation** → Changes applied, activation receipt signed
 
-### Proposal Commands
+### Proposal Structure
 
-```bash
-# List all proposals
-kernelclaw proposals list
-
-# Show proposal details
-kernelclaw proposals show prop_abc123
-
-# Approve and apply changes
-kernelclaw proposals approve prop_abc123
-
-# Reject proposal
-kernelclaw proposals reject prop_abc123
+```rust
+pub struct ImprovementProposal {
+    pub id: String,           // prop_{timestamp}
+    pub failed_goal: String,
+    pub failure_point: String,
+    pub probable_cause: String,
+    pub candidate_safeguard: String,
+    pub proposed_changes: Vec<ProposedChange>,
+    pub status: ProposalStatus,  // Pending, Approved, Rejected
+}
 ```
 
 ## Knowledge Graph
 
 ### Node Types
-
 - `Goal` - Attempted goals
 - `Tool` - Available tools
 - `Capability` - Permissions
@@ -85,13 +142,13 @@ kernelclaw proposals reject prop_abc123
 ### Graph Operations
 
 ```rust
-use kernel_core::graph::{KnowledgeGraph, Node, Edge};
+use kernel_core::graph::{KnowledgeGraph, Node, Edge, NodeType};
 
 // Create graph
 let mut graph = KnowledgeGraph::new();
 
 // Add nodes
-graph.add_node(Node::new("tool_file_read", NodeType::Tool, "file_read tool"));
+graph.add_node(Node::new("tool_file_read", NodeType::Tool, "file_read"));
 
 // Add edges
 graph.add_edge(Edge::new("tool_file_read", "cap_readonly", "requires"));
@@ -105,62 +162,68 @@ let connections = graph.find_connected_to_failure("permission_denied");
 
 ### Graph Visualization
 
-Open `tools/graph-viz.html` in a browser to see your knowledge graph:
+Open `tools/graph-viz.html` in a browser:
 
-**Note**: The visualization uses Three.js from CDN (cdnjs.cloudflare.com). This is an optional tool, not part of the core kernel. The core kernel has zero external Rust dependencies when using `--features use_zero_dep`.
+**Note**: Uses Three.js from CDN (cdnjs.cloudflare.com). This is an optional visualization tool, not part of the core kernel.
 
-```
-# In browser
-open tools/graph-viz.html
+## Zero-Dependency Options
 
-# Controls:
-# - Click node for details
-# - Drag to move nodes
-# - r = reset camera
-# - + / - = zoom
-# - Space = relayout
-```
+### Enable Zero-Dependency Mode
 
-## Architecture
-
-```
-kernel-cli          # CLI + VSIK + Graph commands
-kernel-core       # Orchestration + proposals + graph
-kernel-crypto     # Ed25519 signing
-kernel-daemon    # Unix socket server
-kernel-exec      # Tool execution
-kernel-llm       # Ollama client
-kernel-memory    # JSONL ledger
-kernel-notify   # Notifications
-kernel-policy   # YAML policy
+```toml
+# Cargo.toml
+[features]
+default = ["use_std_deps"]
+use_zero_dep = []
 ```
 
-## Zero-Dependency
+Or build with:
+```bash
+cargo build --features use_zero_dep
+```
 
-**Core kernel (Rust)**: Full zero-dep achievable via `--features use_zero_dep`
+### Available Zero-Dep Modules
 
-| Dependency | Replacement |
-|------------|-------------|
-| serde | kernel-zero-serde |
-| serde_json | kernel-zero-json |
-| serde_yaml | kernel-zero-yaml |
-| tokio | kernel-zero-tokio |
-| dirs | kernel-zero-dirs |
+| Module | Replaces | LOC |
+|--------|---------|-----|
+| kernel-zero | chrono, uuid, thiserror, sha256 | ~800 |
+| kernel-zero-ed25519 | ed25519-dalek | ~500 |
+| kernel-zero-serde | serde | ~700 |
+| kernel-zero-tokio | tokio | ~700 |
+| kernel-zero-json | serde_json | ~10KB |
+| kernel-zero-yaml | serde_yaml | ~5KB |
+| kernel-zero-dirs | dirs | ~8.5KB |
 
-**Note**: The optional visualization tool (tools/graph-viz.html) uses Three.js from CDN. This is NOT part of the core kernel.
+## Policy Configuration
 
-## Dependencies
+Edit `policy.yaml`:
 
-Using standard deps (default). Zero-dep available via feature flag.
+```yaml
+capabilities:
+  - name: file_read
+    allowed_paths:
+      - /workspace/*
+
+tools:
+  - name: file_read
+    capability: file_read
+```
 
 ## Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
-| v0.2.1 | 2026-04-10 | Knowledge Graph + Three.js viz |
+| v0.2.1 | 2026-04-12 | Knowledge Graph + Improvement Report |
 | v0.2.0 | 2026-04-10 | VSIK MVP |
 | v0.1.7 | 2026-04-10 | MIT License |
 | v0.1.6 | 2026-04-10 | Honest assessment |
+
+## Documentation
+
+- `README.md` - This file
+- `docs/METADATA_ANALYSIS.md` - Full metadata analysis
+- `docs/RESEARCH_ARC.md` - Research journey
+- `docs/IMPROVEMENT_REPORT.md` - Improvement recommendations
 
 ## Citation
 
