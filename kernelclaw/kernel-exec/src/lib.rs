@@ -1,12 +1,12 @@
-//! KernelClaw Executor - ENFORCED capability gating at tool boundary
-//! Uses kernel_policy::Policy, NOT duplicate
+//! KernelClaw Executor - Feature-gated tool execution
+//! Tools are optional via Cargo features
 
 mod tools;
 
 use serde::{Deserialize, Serialize};
 use kernel_zero::error::Error;
 
-pub use tools::{file_read, file_read_dir, echo_tool, calendar_summary, health_check, ToolPolicy};
+pub use tools::ToolPolicy;
 
 #[derive(Debug)]
 pub enum ExecError {
@@ -14,6 +14,8 @@ pub enum ExecError {
     Denied(String),
     #[error("Execution failed: {0}")]
     Failed(String),
+    #[error("Tool not enabled: {0}")]
+    ToolNotEnabled(String),
 }
 
 /// Re-export Policy from kernel-policy for unified use
@@ -102,57 +104,153 @@ impl Executor {
     
     /// Execute with policy enforced
     pub fn execute(&self, req: &ExecRequest) -> Result<ExecResult, ExecError> {
-        // 1. Enforce capabilities
+        // 1. Check tool is enabled
+        self.check_tool_enabled(&req.tool_name)?;
+        
+        // 2. Enforce capabilities
         for cap in &req.capabilities {
             enforce_capability(cap, &self.policy)?;
         }
         
-        // 2. Convert for tool boundary
+        // 3. Convert for tool boundary
         let tool_policy = ToolPolicy::from(&self.policy);
         
-        // 3. Execute tools
+        // 4. Execute tools
         match req.tool_name.as_str() {
             "file_read" => {
-                if let Some(path) = req.params.get("path").and_then(|v| v.as_str()) {
-                    match tools::file_read(path, &tool_policy) {
-                        Ok(content) => Ok(ExecResult { success: true, output: content, error: None, sandboxed: false }),
-                        Err(e) => Ok(ExecResult { success: false, output: String::new(), error: Some(e), sandboxed: false })
+                #[cfg(feature = "tool-file-read")]
+                {
+                    if let Some(path) = req.params.get("path").and_then(|v| v.as_str()) {
+                        return Ok(execute_file_read(path, &tool_policy));
                     }
-                } else {
-                    Err(ExecError::Failed("Missing path".to_string()))
                 }
+                #[cfg(not(feature = "tool-file-read"))]
+                return Err(ExecError::ToolNotEnabled("file_read".to_string()));
             }
             "file_read_dir" => {
-                if let Some(path) = req.params.get("path").and_then(|v| v.as_str()) {
-                    match tools::file_read_dir(path, &tool_policy) {
-                        Ok(entries) => Ok(ExecResult { success: true, output: entries.join("\n"), error: None, sandboxed: false }),
-                        Err(e) => Ok(ExecResult { success: false, output: String::new(), error: Some(e), sandboxed: false })
+                #[cfg(feature = "tool-file-read")]
+                {
+                    if let Some(path) = req.params.get("path").and_then(|v| v.as_str()) {
+                        return Ok(execute_file_read_dir(path, &tool_policy));
                     }
-                } else {
-                    Err(ExecError::Failed("Missing path".to_string()))
                 }
+                #[cfg(not(feature = "tool-file-read"))]
+                return Err(ExecError::ToolNotEnabled("file_read_dir".to_string()));
             }
             "file_write" => {
-                if let (Some(path), Some(content)) = (req.params.get("path").and_then(|v| v.as_str()), req.params.get("content").and_then(|v| v.as_str())) {
-                    match tools::file_write(path, content, &tool_policy) {
-                        Ok(_) => Ok(ExecResult { success: true, output: format!("Written to {}", path), error: None, sandboxed: false }),
-                        Err(e) => Ok(ExecResult { success: false, output: String::new(), error: Some(e), sandboxed: false })
+                #[cfg(feature = "tool-file-write")]
+                {
+                    if let (Some(path), Some(content)) = (req.params.get("path").and_then(|v| v.as_str()), req.params.get("content").and_then(|v| v.as_str())) {
+                        return Ok(execute_file_write(path, content, &tool_policy));
                     }
-                } else {
-                    Err(ExecError::Failed("Missing path or content".to_string()))
                 }
+                #[cfg(not(feature = "tool-file-write"))]
+                return Err(ExecError::ToolNotEnabled("file_write".to_string()));
+            }
+            "file_metadata" => {
+                #[cfg(feature = "tool-file-metadata")]
+                {
+                    if let Some(path) = req.params.get("path").and_then(|v| v.as_str()) {
+                        return Ok(execute_file_metadata(path, &tool_policy));
+                    }
+                }
+                #[cfg(not(feature = "tool-file-metadata"))]
+                return Err(ExecError::ToolNotEnabled("file_metadata".to_string()));
             }
             "echo" => {
-                let input = req.params.get("input").and_then(|v| v.as_str()).unwrap_or("");
-                Ok(ExecResult { success: true, output: tools::echo_tool(input), error: None, sandboxed: false })
+                #[cfg(feature = "tool-echo")]
+                {
+                    let input = req.params.get("input").and_then(|v| v.as_str()).unwrap_or("");
+                    return Ok(ExecResult { success: true, output: tools::echo_tool(input), error: None, sandboxed: false });
+                }
+                #[cfg(not(feature = "tool-echo"))]
+                return Err(ExecError::ToolNotEnabled("echo".to_string()));
             }
             "calendar_summary" => {
-                Ok(ExecResult { success: true, output: tools::calendar_summary(), error: None, sandboxed: false })
+                #[cfg(feature = "tool-calendar")]
+                return Ok(ExecResult { success: true, output: tools::calendar_summary(), error: None, sandboxed: false });
+                #[cfg(not(feature = "tool-calendar"))]
+                return Err(ExecError::ToolNotEnabled("calendar_summary".to_string()));
             }
             "health_check" => {
-                Ok(ExecResult { success: true, output: tools::health_check(), error: None, sandboxed: false })
+                #[cfg(feature = "tool-health")]
+                return Ok(ExecResult { success: true, output: tools::health_check(), error: None, sandboxed: false });
+                #[cfg(not(feature = "tool-health"))]
+                return Err(ExecError::ToolNotEnabled("health_check".to_string()));
             }
             _ => Err(ExecError::Failed(format!("Unknown tool: {}", req.tool_name))),
         }
+    }
+    
+    /// Check if tool is enabled via feature flags
+    fn check_tool_enabled(&self, tool: &str) -> Result<(), ExecError> {
+        match tool {
+            "file_read" | "file_read_dir" => {
+                #[cfg(feature = "tool-file-read")]
+                Ok(())
+                #[cfg(not(feature = "tool-file-read"))]
+                Err(ExecError::ToolNotEnabled(tool.to_string()))
+            }
+            "file_write" => {
+                #[cfg(feature = "tool-file-write")]
+                Ok(())
+                #[cfg(not(feature = "tool-file-write"))]
+                Err(ExecError::ToolNotEnabled(tool.to_string()))
+            }
+            "file_metadata" => {
+                #[cfg(feature = "tool-file-metadata")]
+                Ok(())
+                #[cfg(not(feature = "tool-file-metadata"))]
+                Err(ExecError::ToolNotEnabled(tool.to_string()))
+            }
+            "echo" => {
+                #[cfg(feature = "tool-echo")]
+                Ok(())
+                #[cfg(not(feature = "tool-echo"))]
+                Err(ExecError::ToolNotEnabled(tool.to_string()))
+            }
+            "calendar_summary" => {
+                #[cfg(feature = "tool-calendar")]
+                Ok(())
+                #[cfg(not(feature = "tool-calendar"))]
+                Err(ExecError::ToolNotEnabled(tool.to_string()))
+            }
+            "health_check" => {
+                #[cfg(feature = "tool-health")]
+                Ok(())
+                #[cfg(not(feature = "tool-health"))]
+                Err(ExecError::ToolNotEnabled(tool.to_string()))
+            }
+            _ => Ok(()), // Unknown tools allowed
+        }
+    }
+}
+
+/// Helper functions that wrap tools with feature checks
+fn execute_file_read(path: &str, policy: &ToolPolicy) -> ExecResult {
+    match tools::file_read(path, policy) {
+        Ok(content) => ExecResult { success: true, output: content, error: None, sandboxed: false },
+        Err(e) => ExecResult { success: false, output: String::new(), error: Some(e), sandboxed: false }
+    }
+}
+
+fn execute_file_read_dir(path: &str, policy: &ToolPolicy) -> ExecResult {
+    match tools::file_read_dir(path, policy) {
+        Ok(entries) => ExecResult { success: true, output: entries.join("\n"), error: None, sandboxed: false },
+        Err(e) => ExecResult { success: false, output: String::new(), error: Some(e), sandboxed: false }
+    }
+}
+
+fn execute_file_write(path: &str, content: &str, policy: &ToolPolicy) -> ExecResult {
+    match tools::file_write(path, content, policy) {
+        Ok(_) => ExecResult { success: true, output: format!("Written to {}", path), error: None, sandboxed: false },
+        Err(e) => ExecResult { success: false, output: String::new(), error: Some(e), sandboxed: false }
+    }
+}
+
+fn execute_file_metadata(path: &str, policy: &ToolPolicy) -> ExecResult {
+    match tools::file_metadata(path, policy) {
+        Ok(info) => ExecResult { success: true, output: info, error: None, sandboxed: false },
+        Err(e) => ExecResult { success: false, output: String::new(), error: Some(e), sandboxed: false }
     }
 }

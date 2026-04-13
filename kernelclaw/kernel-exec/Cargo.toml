@@ -4,6 +4,22 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 
+[features]
+# Default: enable all tools
+default = ["tool-echo", "tool-file-read", "tool-file-write", "tool-file-metadata", "tool-calendar", "tool-health"]
+
+# Individual tool features - opt-in
+tool-echo = []
+tool-file-read = []
+tool-file-write = []
+tool-file-metadata = []
+tool-calendar = []
+tool-health = []
+
+# Tool groups
+tool-all = ["tool-echo", "tool-file-read", "tool-file-write", "tool-file-metadata", "tool-calendar", "tool-health"]
+tool-readonly = ["tool-echo", "tool-file-read", "tool-file-metadata", "tool-health"]
+
 [dependencies]
 tokio.workspace = true
 serde.workspace = true
@@ -11,7 +27,6 @@ serde_json.workspace = true
 tracing.workspace = true
 thiserror.workspace = true
 anyhow.workspace = true
-wasmtime.workspace = true
 
 kernel-policy = { path = "../kernel-policy" }
 kernel-crypto = { path = "../kernel-crypto" }
