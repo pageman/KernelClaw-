@@ -45,6 +45,8 @@
 | File | Purpose |
 |------|---------|
 | tools/graph-viz.html | Three.js Knowledge Graph visualization |
+| tools/ollama-bridge.mjs | Ollama-compatible LLM proxy (external) |
+| tools/start-bridge.sh | Launcher for ollama-bridge |
 
 ## Robustness Fixes Applied (v0.2.1-patch)
 
