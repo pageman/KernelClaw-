@@ -19,7 +19,7 @@ pub fn now_millis() -> i64 {
         .as_millis() as i64
 }
 
-/// Get current Unix timestamp in microseconds
+/// Get current Unix timestamp in microseconds  
 pub fn now_micros() -> i64 {
     SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
