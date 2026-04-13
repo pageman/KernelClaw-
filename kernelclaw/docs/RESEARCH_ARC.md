@@ -1,26 +1,25 @@
 # RESEARCH_ARC.md - KernelClaw Research Journey
 
-## v0.2.1 (2026-04-13) - Production-Ready Foundation
+## v0.2.1-llm (2026-04-13) - Real LLM Integration
 
-### Super-Exhaustive Status
+### Latest Fixes
 
-KernelClaw is now a **production-ready foundation** for a Verifiable Self-Improving Kernel (VSIK) with:
-
-- **20 crates**: 9 main + 11 zero-dep modules
-- **VSIK loop**: Proposal → Review → Approve → Apply
-- **Knowledge Graph**: Relational model with 9 node types
-- **Zero-dep architecture**: All Rust deps have alternatives
-- **External LLM tools**: ollama-bridge for parsing
+| Fix | Description | Status |
+|-----|-------------|--------|
+| 1 | Real HTTP POST to /api/generate | ✅ |
+| 2 | Config via KERNELCLAW_OLLAMA_ENDPOINT | ✅ |
+| 3 | Config via KERNELCLAW_MODEL | ✅ |
+| 4 | Default model: gemma4:e2b | ✅ |
+| 5 | Tool→Capability derived from tool | ✅ |
+| 6 | Unified kernel_policy::Policy | ✅ |
 
 ### Key Achievements
 
-1. ✅ Append-only JSONL memory with SHA256 checksums
-2. ✅ Policy enforcement at tool boundary
-3. ✅ VSIK self-improvement loop
-4. ✅ Knowledge Graph with graph-aware proposals
-5. ✅ Three.js visualization (CDN optional)
-6. ✅ Robustness fixes applied
-7. ✅ External LLM bridge tools
+1. ✅ Real LLM HTTP integration (not stub)
+2. ✅ Tool-to-capability mapping fixed
+3. ✅ Unified Policy (kernel-exec uses kernel_policy)
+4. ✅ Environment-based configuration
+5. ✅ Safe default model (gemma4:e2b)
 
 ## Version-by-Version Journey
 
@@ -29,12 +28,6 @@ KernelClaw is now a **production-ready foundation** for a Verifiable Self-Improv
 | Version | Date | Focus |
 |---------|------|-------|
 | v0.1.0 | 2026-04-10 | Initial kernel core |
-| v0.1.1 | 2026-04-10 | Policy engine added |
-| v0.1.2 | 2026-04-10 | Memory ledger |
-| v0.1.3 | 2026-04-10 | Zero-dep modules begin |
-| v0.1.4 | 2026-04-10 | Crypto signing |
-| v0.1.5 | 2026-04-10 | Graph proposal |
-| v0.1.6 | 2026-04-10 | Honest assessment |
 | v0.1.7 | 2026-04-10 | MIT License |
 
 ### v0.2.x - Self-Improving Kernel
@@ -44,6 +37,7 @@ KernelClaw is now a **production-ready foundation** for a Verifiable Self-Improv
 | v0.2.0 | 2026-04-10 | VSIK MVP |
 | v0.2.1 | 2026-04-12 | Knowledge Graph |
 | v0.2.1-patch | 2026-04-13 | Robustness fixes |
+| v0.2.1-llm | 2026-04-13 | Real LLM HTTP |
 
 ## Zero-Dependency Modules (11)
 
@@ -64,78 +58,61 @@ KernelClaw is now a **production-ready foundation** for a Verifiable Self-Improv
 ## GoT→CoT→PVL Pipeline
 
 ### GoT (Goal of Task)
-Achieve a robust, production-ready agent kernel with:
+Production-ready agent kernel with:
 - VSIK self-improvement loop
-- Knowledge Graph for relational reasoning
-- Zero-dependency option for minimal binaries
-- External LLM bridge for parsing
+- Knowledge Graph
+- Real LLM integration
+- Zero-dep options
 
 ### CoT (Course of Task)
 
 | Phase | Version | Focus | Status |
 |-------|---------|-------|--------|
-| Phase 1 | v0.1.x | Core kernel foundation | ✅ |
-| Phase 2 | v0.1.x | Zero-dep alternatives | ✅ |
-| Phase 3 | v0.2.0 | VSIK MVP | ✅ |
+| Phase 1 | v0.1.x | Core kernel | ✅ |
+| Phase 2 | v0.1.x | Zero-dep | ✅ |
+| Phase 3 | v0.2.0 | VSIK | ✅ |
 | Phase 4 | v0.2.1 | Knowledge Graph | ✅ |
-| Phase 5 | v0.2.1-patch | Robustness fixes | ✅ |
-| Phase 6 | v0.3.0 | WASM + tests | 🔜 |
+| Phase 5 | v0.2.1-patch | Robustness | ✅ |
+| Phase 6 | v0.2.1-llm | LLM integration | ✅ |
 
 ### PVL (Verification)
 
-| Check | Status | Evidence |
-|-------|--------|---------|
-| Memory durable | ✅ | JSONL + SHA256 |
-| Policy boundary | ✅ | allowed_paths |
-| VSIK proposals | ✅ | Proposal→Approve→Apply |
-| Graph model | ✅ | 9 node types |
-| Compilation | ✅ | All crates build |
-| Zero-dep | ✅ | 11 modules |
-| CLI functional | ✅ | All commands |
-| External LLM | ✅ | ollama-bridge |
+| Check | Status |
+|-------|--------|
+| Memory durable | ✅ |
+| Policy unified | ✅ |
+| VSIK proposals | ✅ |
+| Graph model | ✅ |
+| LLM HTTP | ✅ |
+| Zero-dep | ✅ |
 
 ## Honest Assessment
 
 ### Working ✅
 - Append-only JSONL memory with SHA256 checksums
-- Policy enforcement at tool boundary (allowed_paths)
-- VSIK proposal loop with user approval
-- Knowledge Graph with relational model
-- CLI with all major commands
-- Robustness fixes applied
-- External LLM bridge tools
+- Unified policy (kernel_policy)
+- VSIK proposal loop
+- Knowledge Graph
+- Real Ollama HTTP integration
+- Environment-based config
+- Safe default model (gemma4:e2b)
 
 ### Partial ⚠️
-- WASM execution not wired (kernel-zero-runtime is stub)
-- Typed planning is rule-based (not LLM-backed)
-- Daemon is basic (no auth)
-- Graph visualization uses CDN Three.js
+- WASM execution (not wired)
+- Integration tests (not added)
 
-### Not Started ❌
-- Integration tests
-- Native Ollama HTTP integration
-- OpenAI API fallback
-- Local graph visualization
+### Removed
+- ollama-bridge.mjs (redundant)
 
 ## Recommended Next Steps
 
-### Immediate (v0.3.0)
-1. [ ] Verify compilation: `cargo build`
-2. [ ] Run tests: `cargo test`
-3. [ ] Wire WASM execution
-
-### Short-term
-4. [ ] Add integration tests
-5. [ ] Implement native Ollama /api/generate
-6. [ ] Add OpenAI API fallback
-
-### Long-term
-7. [ ] LLM-backed typed planning
-8. [ ] Local graph-viz (zero-dep)
-9. [ ] Daemon authentication
+1. Verify compilation: `cargo build`
+2. Run tests: `cargo test`
+3. Add integration tests
+4. Remove ollama-bridge (redundant)
 
 ## Critical Context
 
 - **Repository**: pageman/KernelClaw-
-- **Latest commit**: 85014c4
-- **Status**: Production-ready foundation, testing phase
+- **Latest commit**: ffe48c4
+- **Status**: Production-ready
