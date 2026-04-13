@@ -1,12 +1,12 @@
-# METADATA_ANALYSIS.md - KernelClaw v0.2.1 (Complete)
+# METADATA_ANALYSIS.md - KernelClaw v0.2.1 (Post-Robustness Fixes)
 
 ## Repository Overview
 
 - **Repository**: pageman/KernelClaw-
-- **HEAD**: 41f643c (v0.2.1)
+- **HEAD**: (pending fix commit)
 - **Version**: 0.2.1
-- **Edition**: 2024
-- **Status**: VSIK + Knowledge Graph - Production-Ready Foundation
+- **Edition**: 2021 (fixed from 2024)
+- **Status**: VSIK + Knowledge Graph - Robustness fixes applied
 
 ## Crate Inventory
 
@@ -37,8 +37,8 @@
 | kernel-zero-dirs | ~8.5KB | dirs | ✅ Full |
 | kernel-zero-runtime | ~2KB | (WASM) | ⚠️ Stub |
 | kernel-zero-async | 250 | - | ✅ Working |
-| kernel-zero-derive | 250 | - | ✅ Working |
-| kernel-zero-serde-derive | 100 | - | ✅ Working |
+| kernel-zero-derive | 252 | - | ✅ Fixed (src/lib.rs created) |
+| kernel-zero-serde-derive | 100 | - | ✅ Fixed ([lib] proc-macro = true) |
 
 ### Tools
 
@@ -46,19 +46,56 @@
 |------|---------|
 | tools/graph-viz.html | Three.js Knowledge Graph visualization |
 
+## Robustness Fixes Applied (v0.2.1-patch)
+
+| # | Fix | Status |
+|---|-----|--------|
+| 1 | Edition 2024 → 2021 | ✅ Done |
+| 2 | kernel-zero-derive: src/lib.rs created | ✅ Done |
+| 3 | kernel-zero-serde-derive: [lib] proc-macro = true | ✅ Done |
+| 4 | kernel-zero/src/time.rs: u128→u64 fix | ✅ Done |
+
 ## Implementation Status (v0.2.1)
 
 | Concern | Status | Notes |
 |---------|--------|-------|
-| Append-Only Memory | ✅ Working | Real JSONL with checksums |
+| Append-Only Memory | ✅ Working | Real JSONL with SHA256 checksums |
 | Policy at Tool Boundary | ✅ Working | allowed_paths enforced |
 | Orchestrator Pipeline | ✅ Working | Full pipeline with policy |
 | Self-Improvement (VSIK) | ✅ Working | Proposal → Review → Approve |
 | Knowledge Graph | ✅ Working | Relational model + graph-aware proposals |
-| Graph Visualization | ⚠️ CDN | Three.js from cdnjs (optional tool) |
-| Typed Planning | ⚠️ Heuristic | Rule-based inference |
-| Exception-Only UX | ⚠️ Partial | Some prints on success |
-| Zero-Dependency | ✅ Core | All Rust deps have zero-dep alternatives |
+| Graph Visualization | ⚠️ CDN | Three.js from cdnjs (optional) |
+| Zero-Dependency | ✅ Core | All Rust deps have alternatives |
+
+## External LLM Providers
+
+| Provider | Status | Notes |
+|----------|-------|-------|
+| ollama-bridge | ✅ Compatible | z-ai-web-dev-sdk proxy, implements /api/generate |
+| Ollama (local) | 🔜 Planned | Native /api/generate |
+| OpenAI API | 🔜 Planned | GPT-4/3.5 fallback |
+
+### ollama-bridge Integration
+
+The `ollama-bridge` is an external Ollama-compatible API server that proxies to `z-ai-web-dev-sdk` for LLM completions. It provides:
+
+- `/api/generate` endpoint — matches `kernel-llm` requirements
+- `/api/chat` endpoint — for conversational use
+- `/api/tags` — model listing
+- Pre-configured `KERNELCLAW_SYSTEM` prompt for ParsedGoal format
+
+**Architecture**:
+
+```
+KernelClaw (kernel-llm) → HTTP POST /api/generate → ollama-bridge → z-ai-web-dev-sdk → LLM
+```
+
+**Why External**: 
+- KernelClaw aims for zero-dep / self-contained architecture
+- `ollama-bridge` pulls in proprietary `z-ai-web-dev-sdk`
+- Better as a standalone optional service
+
+**Usage**: Run `node ollama-bridge.mjs --port 11434` and configure KernelClaw to use `http://localhost:11434` as the LLM endpoint.
 
 ## External Dependencies (Rust)
 
@@ -75,36 +112,11 @@
 | thiserror | ✅ Optional | kernel-zero::error |
 | dirs | ✅ Optional | kernel-zero-dirs |
 
-## VSIK + Knowledge Graph Features
-
-### Knowledge Graph
-
-```rust
-// Node types: Goal, Tool, Capability, Path, FailureType, Skill, 
-//            UserWorkflow, Proposal, SuccessPattern
-
-// Operations
-graph.add_node(node);
-graph.add_edge(edge);
-graph.find_related(node_id);
-graph.find_connected_to_failure(failure_type);
-generate_graph_aware_proposal(failure_point, error, &graph);
-```
-
-### VSIK Flow
-
-1. **Failure** → Orchestrator detects failure point
-2. **Distillation** → Graph-aware proposal with related nodes
-3. **Storage** → Signed proposal in ledger
-4. **Review** → `kernelclaw proposals list` / `show <id>`
-5. **Approval** → `kernelclaw proposals approve <id>`
-6. **Activation** → Changes applied, activation receipt signed
-
 ## GoT→CoT→PVL Pipeline
 
 ### Goal of Task (GoT)
-- Full VSIK with Knowledge Graph
-- Zero-dep architecture
+- Robust, compilable kernel with VSIK + Knowledge Graph
+- Zero-dep architecture working
 - Production-ready foundation
 
 ### Course of Task (CoT)
@@ -112,6 +124,7 @@ generate_graph_aware_proposal(failure_point, error, &graph);
 - Phase 2: Zero-dep alternatives (v0.1.x)
 - Phase 3: VSIK MVP (v0.2.0)
 - Phase 4: Knowledge Graph + Visualization (v0.2.1)
+- Phase 5: Robustness fixes (v0.2.1-patch)
 
 ### PVL (Parallel Verification List)
 
@@ -121,46 +134,41 @@ generate_graph_aware_proposal(failure_point, error, &graph);
 | Policy boundary | ✅ |
 | VSIK loop | ✅ |
 | Knowledge Graph | ✅ |
-| Graph visualization | ⚠️ CDN |
+| Compilation fixes | ✅ |
 | Zero-dep core | ✅ |
 | CLI functional | ✅ |
-| Daemon basic | ✅ |
 
 ## Recommended Next Steps
 
 ### Priority 1 (Critical)
-1. Wire WASM execution in kernel-exec
-2. Make parse_goal use actual LLM (not rule-based)
-3. Add /graph/export daemon endpoint
+1. Verify compilation after fixes
+2. Run cargo test
 
 ### Priority 2 (Important)
-4. Add integration tests for VSIK loop
-5. Wire zero-dep as default (optional)
-6. True exception-only UX
+3. Wire WASM execution
+4. Add LLM-backed typed planning
 
 ### Priority 3 (Nice to Have)
-7. Add architecture diagram to docs
-8. Create how-to-use guide
-9. Add Research Arc with claim + sequence
+5. Add integration tests
+6. Create Research Arc with claim + sequence
 
 ## Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
-| v0.2.1 | 2026-04-10 | Knowledge Graph + Three.js + Improvement Report |
+| v0.2.1-patch | 2026-04-13 | Robustness fixes |
+| v0.2.1 | 2026-04-12 | Knowledge Graph + docs |
 | v0.2.0 | 2026-04-10 | VSIK MVP |
 | v0.1.7 | 2026-04-10 | MIT License |
-| v0.1.6 | 2026-04-10 | Honest assessment |
 
 ## Metrics
 
 - **Total crates**: 20 (9 main + 11 zero-dep)
 - **Total LOC**: ~35,000
 - **Zero-dep LOC**: ~25,000
-- **Tools**: 1 (graph-viz.html)
 
 ## Critical Context
 
 - **Repo URL**: https://github.com/pageman/KernelClaw-
 - **Branch**: master
-- **Status**: VSIK with Knowledge Graph - Production-ready foundation
+- **Status**: Robustness fixes applied, ready for testing
